@@ -1,8 +1,8 @@
-metric,description,zero-shot,lora_m1
-dim1_similarity_mean,1 · embedding similarity vs reference (0-1),0.6907,0.786
-dim1_step_grounding_rouge_l,1 · step grounding ROUGE-L (real exercises only),,0.5545
-dim2_judge_mean,"2 · LLM judge, whole eval set (1-5)",5.0,4.6429
-dim2_judge_mean_gold,"2 · LLM judge, answerable cases (1-5)",5.0,4.9
+metric,description,zeroshot,lora_m1
+dim1_similarity_mean,1 · embedding similarity vs reference (0-1),0.6935,0.7875
+dim1_step_grounding_rouge_l,1 · step grounding ROUGE-L (real exercises only),,0.5503
+dim2_judge_mean,"2 · LLM judge, whole eval set (1-5)",5.0,4.7143
+dim2_judge_mean_gold,"2 · LLM judge, answerable cases (1-5)",5.0,5.0
 dim2_judge_mean_adversarial,"2 · LLM judge, adversarial cases (1-5)",5.0,4.0
 dim2_judge_unparsed,2 · judge outputs with no digit (excluded from the means),0,0
 dim3_domain_hit_rate,"3 · domain criterion met, whole eval set",0.0,0.2143

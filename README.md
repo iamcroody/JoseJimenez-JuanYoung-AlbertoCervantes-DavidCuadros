@@ -186,10 +186,10 @@ probes in `reports/scorecard_baseline_detail.json`.
 
 | Dimension | zero-shot | LoRA (M1) |
 |---|---:|---:|
-| 1 · embedding similarity vs reference (0-1) | 0.691 | 0.786 |
-| 1 · step grounding ROUGE-L (real exercises only) | n/a (n=0) | 0.554 (n=6) |
-| 2 · judge, whole eval set (1-5) | 5.000 | 4.643 |
-| 2 · judge, answerable cases (1-5) | 5.000 | 4.900 |
+| 1 · embedding similarity vs reference (0-1) | 0.694 | 0.788 |
+| 1 · step grounding ROUGE-L (real exercises only) | n/a (n=0) | 0.550 (n=6) |
+| 2 · judge, whole eval set (1-5) | 5.000 | 4.714 |
+| 2 · judge, answerable cases (1-5) | 5.000 | 5.000 |
 | 2 · judge, adversarial cases (1-5) | 5.000 | 4.000 |
 | 2 · judge outputs with no digit | 0 | 0 |
 | 3 · domain criterion met, whole set | 0.0% | 21.4% |
