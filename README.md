@@ -163,15 +163,15 @@ which is the honest description of what a 1.5B judge can tell us.
 
 **Length bias.** `length_bias_probe` scores each reply, then scores it again
 padded with content-free filler ("consistency beats intensity", "stay hydrated").
-Same content, more words. **Measured mean delta: +0.357**, and the same +0.357
+Same content, more words. **Measured mean delta: 0.2857 **, and the same 0.2857
 with the length cap applied, so `MAX_ANSWER_CHARS = 1400` mitigated nothing
 here: the padded answers that exceed the cap were already scoring 5, and the
 ones with room to rise are short enough that the cap never touches them. We are
 reporting that rather than claiming the mitigation we shipped.
 
-The mean understates the effect badly, and the reason is worth stating. Twelve
-of the fourteen plain answers already scored 5, so they had no headroom. Of the
-two that did, both rose, and `adv03` went from **1 to 5** on filler alone. That
+The mean understates the effect badly, and the reason is worth stating. Thirteen
+of the fourteen plain answers already scored 5, so they had no headroom. The 
+one that did rose, and `adv03` went from **1 to 5** on filler alone. That
 case is an out-of-domain request the model was right to be marked down on, and
 420 characters of "consistency beats intensity" turned the judge's harshest
 score into its highest. The rubric says in as many words that length is not
@@ -222,7 +222,7 @@ wrong hurts somebody, and it is the argument for having three dimensions instead
 of one.
 
 **Dimension 1 was fooled the same way, more quietly.** Embedding similarity of
-0.691 for a system with a 0% hit rate is the S05 lesson arriving in our own
+0.694 for a system with a 0% hit rate is the S05 lesson arriving in our own
 numbers: the baseline has learned the *shape* of a correct answer, the five
 fields and the imperative steps and the safety line, without learning to ground
 it in a real exercise. "Push-Ups" with a water bottle balanced on each shoulder,
