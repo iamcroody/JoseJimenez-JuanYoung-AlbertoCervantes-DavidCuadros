@@ -1,0 +1,4 @@
+system,faithfulness,answer_relevancy,context_precision,context_recall,unparsed_verdicts,judge_model,n
+rag_naive,0.571,0.6976,0.2934,0.3361,0,Qwen/Qwen2.5-3B-Instruct,14
+rag_advanced,0.6358,0.6494,0.2337,0.4452,0,Qwen/Qwen2.5-3B-Instruct,14
+rag_final,0.6528,0.6745,0.2428,0.5481,0,Qwen/Qwen2.5-3B-Instruct,14
