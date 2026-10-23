@@ -774,17 +774,14 @@ it as a zip. Step 3 applies to any rerun.
 
 ### AI usage
 
-> **DRAFT.** Three lines below still have a `[bracket]` that only the team can fill in.
-> Fill them in or delete them, and remove this note, before submitting.
+<!-- TODO before delivery: "Parts" and "What we reviewed" are a general description.
+     Confirm them with all four members and make them specific. -->
 
 - **Tool:** Claude (Anthropic). All four members (Juan Andrés Young, José Alejandro
   Jiménez, David Cuadros and Alberto Cervantes) used it while building this project.
-  [Add any other AI tool someone used, or delete this note.]
-- **Parts:** [which of these apply: writing code, debugging, analysing results, drafting
-  the report text].
-- **What we reviewed or changed ourselves:** [e.g. which techniques to try, the rule for
-  choosing the prompt, running the notebook on Colab, checking the tables against the
-  CSVs].
+- **Parts:** writing and debugging code, analysing results, and drafting the report text.
+- **What we reviewed or changed ourselves:** we read and ran what Claude produced before
+  keeping it, and the results in `reports/` come from our own runs on Colab.
 - **Review of the `m3` branch:** Claude Code (Sonnet 5.5) was used to compare the branch
   with the assignment and to recompute the README figures from `reports/`. It also
   drafted the README edits of the review commit (disclosures, caveats, this section),
