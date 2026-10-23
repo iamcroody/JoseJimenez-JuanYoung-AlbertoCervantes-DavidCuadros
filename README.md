@@ -774,20 +774,21 @@ it as a zip. Step 3 applies to any rerun.
 
 ### AI usage
 
-> **DRAFT.** Every `[bracket]` must be filled in by the person who did the work, or
-> deleted if it does not apply. Do not submit with brackets left in.
+> **DRAFT.** Three lines below still have a `[bracket]` that only the team can fill in.
+> Fill them in or delete them, and remove this note, before submitting.
 
-- **M3 code, notebook and report (Alberto):** [tool, e.g. Claude / ChatGPT / Copilot] for
-  [which parts: writing `m3/*.py`, the notebook, drafting the report text, debugging,
-  analysis]. What we reviewed or changed ourselves: [e.g. chose the techniques from the
-  naive system's failures, wrote the prompt probe's decision rule before running it,
-  ran the notebook on Colab and checked the tables against the CSVs].
-- **Review of the `m3` branch ([name]):** Claude Code (Sonnet 5.5) was used to compare
-  the branch with the assignment and to recompute the README figures from `reports/`.
-  It also drafted the README edits of the review commit (disclosures, caveats, this
-  section), which [name] read and [kept / changed: what].
-- **Other members' use of AI in M3** ([name], [name], [name]): [tool and parts, or "none"].
-- **Earlier modules (M1, M2):** [tool and parts, or "see their sections"].
+- **Tool:** Claude (Anthropic). All four members (Juan Andrés Young, José Alejandro
+  Jiménez, David Cuadros and Alberto Cervantes) used it while building this project.
+  [Add any other AI tool someone used, or delete this note.]
+- **Parts:** [which of these apply: writing code, debugging, analysing results, drafting
+  the report text].
+- **What we reviewed or changed ourselves:** [e.g. which techniques to try, the rule for
+  choosing the prompt, running the notebook on Colab, checking the tables against the
+  CSVs].
+- **Review of the `m3` branch:** Claude Code (Sonnet 5.5) was used to compare the branch
+  with the assignment and to recompute the README figures from `reports/`. It also
+  drafted the README edits of the review commit (disclosures, caveats, this section),
+  which sit in their own commit so they can be reviewed on their own.
 
 The models inside the system (the M1 LoRA on Qwen3-1.7B as generator, Qwen2.5-1.5B and
 Qwen2.5-3B as judges, bge-small-en-v1.5 and MiniLM as embeddings, the cross-encoder
