@@ -2,7 +2,9 @@
 
 This project fine-tunes a small language model to recommend a real exercise you can do with a
 household object (like water bottles or a backpack) instead of the gym equipment you don't
-have, or tell you honestly when nothing works.
+have, or tell you honestly when nothing works. In its final form (M3) it looks the request
+up in the catalog before answering, and says plainly when the catalog has nothing that fits:
+see [M3 - Agentic RAG](#m3---agentic-rag-si4006).
 
 Built on the [exercises dataset](https://github.com/jayounghoyos/exercises-dataset), 1324
 exercises with structured metadata and instructions in 10 languages.
@@ -382,6 +384,11 @@ words of context per prompt (104 words per median exercise).
 
 Both runs measured the same numbers for all three decisions.
 
+One caveat on how the embedding model and k were chosen: both were compared on the eval
+set's own 11 answerable cases, with the raw prompt as the query, not on a separate split
+as the prompt was (see below). With n = 11 one case moves hit@k by 0.09, so these two
+choices are tuned on the set we then report on.
+
 ### The eval set
 
 The same 14 examples as M2, unchanged: `eval/eval_set.json`, rubric v1.0, seed 42.
@@ -437,6 +444,9 @@ stops there.
 | v1 (control) | 0% | 100% | still refuses everything |
 | **v2a** | **75%** | **75%** | **fixes the collapse: chosen** |
 | v2b | 100% | 0% | never refuses |
+
+The sample is small: 75% is 6 of 8 answerable rows and 3 of 4 impossible ones. The probe
+separated the candidates; it did not measure a rate.
 
 Every RAG row in the final run uses v2a. Neither the retriever nor the generator
 changed between the runs, only the prompts: the augmented prompt and the agent's
@@ -534,6 +544,12 @@ What the run shows:
   entries the retriever missed. With v2a it did not.
 - **Overuse.** It still calls the tool on 5 cases where the context already had what
   was needed.
+- **It does not use what the tool returns.** In all 9 calls, the next decision step
+  proposed the identical call again, and the repeated-call guard (not the 3-step cap)
+  ended the loop. The answer then came from the final augmented prompt, never from a
+  decision step that had read the tool's result. Each tool use therefore costs two
+  decision generations plus the final one, on top of the HyDE draft: four generations
+  against the advanced system's two (`trace` in `reports/replies_m3.json`).
 
 One caveat: the tool filters with the same apparatus rule (`needs_apparatus`) the
 harness grades with. It is the domain's own rule from M1, not something written for
@@ -602,6 +618,14 @@ Per-case values are in `reports/ragas_m3_detail.json`.
 
 First run, for reference (same judge): naive 0.571 / 0.698 / 0.293 / 0.336,
 advanced 0.636 / 0.649 / 0.234 / 0.445, final 0.653 / 0.675 / 0.243 / 0.548.
+
+**How to read context recall.** The reference of each case is its single `esperado`
+exercise, but several exercises can be right: biceps with a pair of dumbbells has 29
+reachable ones, so a context full of valid biceps exercises that lacks the reference one
+still scores low. For `adv01` and `adv04` the reference is a refusal, so recall says
+little about retrieval there. For retrieval alone, the count of cases with a valid
+exercise in the top 8 is the cleaner measure (naive 5/11, advanced 7/11, final 7/11).
+Recall stays in the table because the assignment asks for it.
 
 Faithfulness splits sharply by reply type (computed from the per-case file). Replies
 that recommend an exercise score 0.712 (naive), 0.806 (advanced) and 0.698 (final).
@@ -678,7 +702,7 @@ loss. The agent, at 39 s and a lower score, is not worth it in its current form.
   a valid exercise into the context, under any variant. They have 2, 1, 1 and 15 valid
   documents, and the objects ("two filled water bottles", "a backpack loaded with
   books", "a filled shopping bag", "a shopping bag of tins") share no words with them. Context recall stays below half
-  (0.445).
+  (0.445, read with the caveat above: it is measured against one reference exercise).
   - For forearms and calves the advanced system refused. That is the valve reporting
     a retrieval miss honestly instead of inventing.
   - For glutes and delts it named a real catalog exercise that the object cannot
@@ -706,10 +730,13 @@ did on adv01. Its problems are findings for the next version, not hidden.
 - It calls the tool on 5 cases that did not need it.
 - It picks the wrong equipment class (`body weight` in 7 of 9 calls).
 - It cannot recover from an argument outside the enum.
+- It repeats the same call instead of reading its result (9 of 9 calls).
 
 The next version should skip the decision step when the top 8 already holds an
 exercise for that muscle and equipment class. It should also map the user's object to
-an equipment class with the same rule the corpus uses, instead of asking the model.
+an equipment class without asking the 1.7B model. That mapping must not be built from
+`OBJECT_MAP` in `scripts/macgyver.py`: it lists the eval set's own objects, held-out
+ones included, so using it would leak the answer into the tool.
 
 ### Reproducing this
 
@@ -730,9 +757,10 @@ retrieved ids against the first run.
 One known source of variation: the dense index is approximate. Between our two runs,
 it replaced one entry of the top 8 with another in 3 of 70 retrievals (see above).
 
-**Testing before `m3/` is pushed.** The notebook clones the public repo for the
-existing code (harness, scripts, dataset, LoRA adapter). If `m3/` is not in that clone,
-the setup cell asks for it as a zip:
+**Re-running before `m3/` is on `main`.** The notebook clones `main` for the existing
+code (harness, scripts, dataset, LoRA adapter). Once this work is merged the clone
+already has `m3/` and steps 1 and 2 are not needed; until then the setup cell asks for
+it as a zip. Step 3 applies to any rerun.
 
 1. From the repo root, zip the `m3/` folder itself so that the archive contains
    `m3/corpus.py` (on Windows: right-click `m3` → *Compress to ZIP file*; elsewhere:
@@ -746,7 +774,24 @@ the setup cell asks for it as a zip:
 
 ### AI usage
 
-We used...
+> **DRAFT.** Every `[bracket]` must be filled in by the person who did the work, or
+> deleted if it does not apply. Do not submit with brackets left in.
+
+- **M3 code, notebook and report (Alberto):** [tool, e.g. Claude / ChatGPT / Copilot] for
+  [which parts: writing `m3/*.py`, the notebook, drafting the report text, debugging,
+  analysis]. What we reviewed or changed ourselves: [e.g. chose the techniques from the
+  naive system's failures, wrote the prompt probe's decision rule before running it,
+  ran the notebook on Colab and checked the tables against the CSVs].
+- **Review of the `m3` branch ([name]):** Claude Code (Sonnet 5.5) was used to compare
+  the branch with the assignment and to recompute the README figures from `reports/`.
+  It also drafted the README edits of the review commit (disclosures, caveats, this
+  section), which [name] read and [kept / changed: what].
+- **Other members' use of AI in M3** ([name], [name], [name]): [tool and parts, or "none"].
+- **Earlier modules (M1, M2):** [tool and parts, or "see their sections"].
+
+The models inside the system (the M1 LoRA on Qwen3-1.7B as generator, Qwen2.5-1.5B and
+Qwen2.5-3B as judges, bge-small-en-v1.5 and MiniLM as embeddings, the cross-encoder
+reranker) are described above and are not part of this declaration.
 
 ## Requirements
 
