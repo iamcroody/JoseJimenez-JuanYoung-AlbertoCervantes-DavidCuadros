@@ -1,0 +1,331 @@
+{
+  "summary": {
+    "rag_naive": {
+      "faithfulness": 0.571,
+      "answer_relevancy": 0.6976,
+      "context_precision": 0.2934,
+      "context_recall": 0.3361,
+      "unparsed_verdicts": 0,
+      "judge_model": "Qwen/Qwen2.5-3B-Instruct"
+    },
+    "rag_advanced": {
+      "faithfulness": 0.6358,
+      "answer_relevancy": 0.6494,
+      "context_precision": 0.2337,
+      "context_recall": 0.4452,
+      "unparsed_verdicts": 0,
+      "judge_model": "Qwen/Qwen2.5-3B-Instruct"
+    },
+    "rag_final": {
+      "faithfulness": 0.6528,
+      "answer_relevancy": 0.6745,
+      "context_precision": 0.2428,
+      "context_recall": 0.5481,
+      "unparsed_verdicts": 0,
+      "judge_model": "Qwen/Qwen2.5-3B-Instruct"
+    }
+  },
+  "per_case": {
+    "rag_naive": [
+      {
+        "id": "gold01-forearms",
+        "faithfulness": 0.6667,
+        "answer_relevancy": 0.7629,
+        "context_precision": 0.0,
+        "context_recall": 0.2727
+      },
+      {
+        "id": "gold02-glutes",
+        "faithfulness": 0.8333,
+        "answer_relevancy": 0.7103,
+        "context_precision": 0.4762,
+        "context_recall": 0.3636
+      },
+      {
+        "id": "gold03-calves",
+        "faithfulness": 0.8333,
+        "answer_relevancy": 0.7384,
+        "context_precision": 0.2,
+        "context_recall": 0.5
+      },
+      {
+        "id": "gold04-upper-back",
+        "faithfulness": 0.8571,
+        "answer_relevancy": 0.6641,
+        "context_precision": 0.125,
+        "context_recall": 0.1818
+      },
+      {
+        "id": "gold05-biceps",
+        "faithfulness": 0.4286,
+        "answer_relevancy": 0.7801,
+        "context_precision": 0.0,
+        "context_recall": 0.7273
+      },
+      {
+        "id": "gold06-delts",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.6536,
+        "context_precision": 0.3929,
+        "context_recall": 0.3
+      },
+      {
+        "id": "gold07-abs",
+        "faithfulness": 0.5,
+        "answer_relevancy": 0.6778,
+        "context_precision": 0.9379,
+        "context_recall": 0.7
+      },
+      {
+        "id": "gold08-triceps",
+        "faithfulness": 0.8333,
+        "answer_relevancy": 0.6391,
+        "context_precision": 1.0,
+        "context_recall": 0.2727
+      },
+      {
+        "id": "gold09-pectorals",
+        "faithfulness": 0.375,
+        "answer_relevancy": 0.79,
+        "context_precision": 0.1429,
+        "context_recall": 0.1
+      },
+      {
+        "id": "gold10-levator-scapulae",
+        "faithfulness": 0.6667,
+        "answer_relevancy": 0.7359,
+        "context_precision": 0.5,
+        "context_recall": 0.3636
+      },
+      {
+        "id": "adv01-impossible-pair",
+        "faithfulness": 0.8333,
+        "answer_relevancy": 0.7048,
+        "context_precision": 0.0,
+        "context_recall": 0.0
+      },
+      {
+        "id": "adv02-false-premise",
+        "faithfulness": 0.5,
+        "answer_relevancy": 0.7686,
+        "context_precision": 0.0,
+        "context_recall": 0.6154
+      },
+      {
+        "id": "adv03-out-of-domain",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.5816,
+        "context_precision": 0.0,
+        "context_recall": 0.3077
+      },
+      {
+        "id": "adv04-unsafe-object",
+        "faithfulness": 0.6667,
+        "answer_relevancy": 0.5587,
+        "context_precision": 0.3333,
+        "context_recall": 0.0
+      }
+    ],
+    "rag_advanced": [
+      {
+        "id": "gold01-forearms",
+        "faithfulness": 0.7778,
+        "answer_relevancy": 0.4755,
+        "context_precision": 0.0,
+        "context_recall": 0.3636
+      },
+      {
+        "id": "gold02-glutes",
+        "faithfulness": 0.7143,
+        "answer_relevancy": 0.7002,
+        "context_precision": 0.0,
+        "context_recall": 0.4545
+      },
+      {
+        "id": "gold03-calves",
+        "faithfulness": 0.8,
+        "answer_relevancy": 0.8055,
+        "context_precision": 0.4167,
+        "context_recall": 0.5
+      },
+      {
+        "id": "gold04-upper-back",
+        "faithfulness": 0.7143,
+        "answer_relevancy": 0.7175,
+        "context_precision": 0.0,
+        "context_recall": 0.7273
+      },
+      {
+        "id": "gold05-biceps",
+        "faithfulness": 0.6667,
+        "answer_relevancy": 0.7912,
+        "context_precision": 0.0,
+        "context_recall": 0.6364
+      },
+      {
+        "id": "gold06-delts",
+        "faithfulness": 0.875,
+        "answer_relevancy": 0.4636,
+        "context_precision": 0.5536,
+        "context_recall": 0.3
+      },
+      {
+        "id": "gold07-abs",
+        "faithfulness": 0.75,
+        "answer_relevancy": 0.7267,
+        "context_precision": 0.9267,
+        "context_recall": 0.4
+      },
+      {
+        "id": "gold08-triceps",
+        "faithfulness": 0.7778,
+        "answer_relevancy": 0.6171,
+        "context_precision": 0.0,
+        "context_recall": 0.8182
+      },
+      {
+        "id": "gold09-pectorals",
+        "faithfulness": 0.2222,
+        "answer_relevancy": 0.5649,
+        "context_precision": 0.0,
+        "context_recall": 0.2
+      },
+      {
+        "id": "gold10-levator-scapulae",
+        "faithfulness": 0.7143,
+        "answer_relevancy": 0.7359,
+        "context_precision": 1.0,
+        "context_recall": 0.9091
+      },
+      {
+        "id": "adv01-impossible-pair",
+        "faithfulness": 0.8333,
+        "answer_relevancy": 0.686,
+        "context_precision": 0.0,
+        "context_recall": 0.0
+      },
+      {
+        "id": "adv02-false-premise",
+        "faithfulness": 0.5556,
+        "answer_relevancy": 0.7346,
+        "context_precision": 0.0,
+        "context_recall": 0.6154
+      },
+      {
+        "id": "adv03-out-of-domain",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.5816,
+        "context_precision": 0.0,
+        "context_recall": 0.3077
+      },
+      {
+        "id": "adv04-unsafe-object",
+        "faithfulness": 0.5,
+        "answer_relevancy": 0.4917,
+        "context_precision": 0.375,
+        "context_recall": 0.0
+      }
+    ],
+    "rag_final": [
+      {
+        "id": "gold01-forearms",
+        "faithfulness": 0.7778,
+        "answer_relevancy": 0.7463,
+        "context_precision": 0.0,
+        "context_recall": 0.7273
+      },
+      {
+        "id": "gold02-glutes",
+        "faithfulness": 0.7143,
+        "answer_relevancy": 0.7103,
+        "context_precision": 0.0,
+        "context_recall": 0.4545
+      },
+      {
+        "id": "gold03-calves",
+        "faithfulness": 0.8,
+        "answer_relevancy": 0.8055,
+        "context_precision": 0.4371,
+        "context_recall": 0.5
+      },
+      {
+        "id": "gold04-upper-back",
+        "faithfulness": 0.8571,
+        "answer_relevancy": 0.7742,
+        "context_precision": 0.0,
+        "context_recall": 0.7273
+      },
+      {
+        "id": "gold05-biceps",
+        "faithfulness": 0.6,
+        "answer_relevancy": 0.6327,
+        "context_precision": 0.1111,
+        "context_recall": 0.6364
+      },
+      {
+        "id": "gold06-delts",
+        "faithfulness": 0.875,
+        "answer_relevancy": 0.4636,
+        "context_precision": 0.521,
+        "context_recall": 0.3
+      },
+      {
+        "id": "gold07-abs",
+        "faithfulness": 0.875,
+        "answer_relevancy": 0.7231,
+        "context_precision": 0.8308,
+        "context_recall": 0.9
+      },
+      {
+        "id": "gold08-triceps",
+        "faithfulness": 0.7778,
+        "answer_relevancy": 0.6171,
+        "context_precision": 0.0,
+        "context_recall": 0.8182
+      },
+      {
+        "id": "gold09-pectorals",
+        "faithfulness": 0.6667,
+        "answer_relevancy": 0.8066,
+        "context_precision": 0.0,
+        "context_recall": 0.7
+      },
+      {
+        "id": "gold10-levator-scapulae",
+        "faithfulness": 0.7143,
+        "answer_relevancy": 0.7359,
+        "context_precision": 1.0,
+        "context_recall": 0.9091
+      },
+      {
+        "id": "adv01-impossible-pair",
+        "faithfulness": 0.7143,
+        "answer_relevancy": 0.686,
+        "context_precision": 0.0,
+        "context_recall": 0.0
+      },
+      {
+        "id": "adv02-false-premise",
+        "faithfulness": 0.6,
+        "answer_relevancy": 0.6065,
+        "context_precision": 0.1111,
+        "context_recall": 0.6154
+      },
+      {
+        "id": "adv03-out-of-domain",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.5816,
+        "context_precision": 0.0,
+        "context_recall": 0.3846
+      },
+      {
+        "id": "adv04-unsafe-object",
+        "faithfulness": 0.1667,
+        "answer_relevancy": 0.5539,
+        "context_precision": 0.3876,
+        "context_recall": 0.0
+      }
+    ]
+  },
+  "fallback_notes": []
+}

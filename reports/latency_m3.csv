@@ -1,0 +1,9 @@
+system,median_latency_s,mean_latency_s,max_latency_s,n
+zeroshot,5.445,6.501,21.985,14
+lora_m1,7.869,9.03,22.012,14
+rag_naive,7.652,6.317,9.468,14
+rag_advanced,15.235,15.866,31.605,14
+rag_adv_no_hybrid,14.71,14.766,29.762,14
+rag_adv_no_rerank,14.875,15.064,29.819,14
+rag_adv_no_hyde,7.825,6.494,10.233,14
+rag_final,38.919,36.429,59.298,14

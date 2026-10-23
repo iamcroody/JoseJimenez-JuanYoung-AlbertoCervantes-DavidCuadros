@@ -2,7 +2,9 @@
 
 This project fine-tunes a small language model to recommend a real exercise you can do with a
 household object (like water bottles or a backpack) instead of the gym equipment you don't
-have, or tell you honestly when nothing works.
+have, or tell you honestly when nothing works. In its final form (M3) it looks the request
+up in the catalog before answering, and says plainly when the catalog has nothing that fits:
+see [M3 - Agentic RAG](#m3---agentic-rag-si4006).
 
 Built on the [exercises dataset](https://github.com/jayounghoyos/exercises-dataset), 1324
 exercises with structured metadata and instructions in 10 languages.
@@ -289,6 +291,505 @@ runtime, and run every cell in order. Seeds are fixed (42), decoding is greedy,
 and the judge model, embedding model and rubric version are written into the CSV
 alongside the scores, so a rerun that disagrees is telling you something real
 rather than sampling noise.
+
+## M3 - Agentic RAG (SI4006)
+
+**In plain words.** You tell the system the muscle you want to train and the one
+thing you have at home. Before answering, it looks the request up in our catalog of
+1324 real exercises, and it can run a second, exact lookup when the first search
+comes back with nothing that fits. A good answer is an exercise that really exists
+in the catalog, trains that muscle and works with that object, with its real steps.
+When nothing fits, a good answer says so plainly instead of inventing something.
+
+### What is in the repo
+
+| File | What it is |
+|---|---|
+| `m3/corpus.py` | ingest and chunk: one document per catalog exercise, its statistics, and which eval cases have a valid answer at all |
+| `m3/rag.py` | embed and store (Chroma), BM25, RRF, cross-encoder rerank, HyDE, the augmented prompts with the escape valve (`rag.PROMPTS`), `make_rag` for the naive and advanced systems, and the `Recorder` that keeps latency and contexts outside the harness |
+| `m3/agent.py` | the `find_exercises` tool: its schema, a tolerant parser for the JSON the model proposes, the step cap, and the final system |
+| `m3/systems.py` | the three systems under the assignment's names, `sistema_rag(pregunta)`, `sistema_rag_avanzado(pregunta)` and `sistema_final(pregunta)`, each returning the reply string the harness expects; `systems.bind(retriever, llm, docs)` wires them once, with prompt v2a by default (`prompt_version="v1"` reproduces the first run) |
+| `m3/probe.py` | chooses the augmented prompt on M1's validation split (never on the eval set), with the rule fixed before the run, and stops the notebook if no candidate fixes the valve collapse |
+| `m3/ragas_m3.py` | the four RAGAS metrics, computed the way the S10 lab does it, with their own local judge |
+| `m3/selftest.py` | `python m3/selftest.py` checks the corpus, retrieval, valve, prompt versions, probe rule, parser, tool, step cap and the three named systems with no model weights |
+| `m3/requirements.txt` | the exact package versions the notebook installs |
+| `notebooks/M3_rag.ipynb` | the final run (prompt v2a), end to end on a free Colab T4 |
+| `notebooks/M3_rag_v1.ipynb`, `reports/*_m3_v1*` | the first run (prompt v1), kept as executed: the valve collapse it found is part of the diagnosis |
+| `reports/scorecard_m3.csv` | the M2 harness on every system, one column per system |
+| `reports/latency_m3.csv` | per-system latency: median, mean, max |
+| `reports/ragas_m3.csv` | RAGAS for the naive, advanced and final systems |
+| `reports/replies_m3.json` | per system and case: reply, retrieved ids and texts, query, latency, tool trace |
+| `reports/scorecard_m3_detail.json`, `reports/ragas_m3_detail.json` | per-case detail, the decisions with their measurements (including the prompt probe), package versions |
+
+### The pipeline
+
+```mermaid
+flowchart LR
+    A[exercises.json<br/>1324 records] -->|ingest + chunk:<br/>1 exercise = 1 chunk| B[documents]
+    B -->|embed| C[(Chroma<br/>dense index)]
+    B -->|tokenize| D[(BM25 index)]
+    Q[request:<br/>muscle + object] --> H{{HyDE:<br/>request + LoRA draft}}
+    H --> C
+    H --> D
+    C --> F{{RRF fusion}}
+    D --> F
+    F -->|pool of 20| R{{cross-encoder<br/>rerank}}
+    R -->|top-k| P[augmented prompt v2a<br/>+ escape valve]
+    P --> G[M1 LoRA<br/>Qwen3-1.7B]
+    G -->|proposes JSON| T[[find_exercises<br/>target, equipment]]
+    T -->|results or<br/>'none exist'| G
+    G --> O[answer or<br/>'No safe option']
+```
+
+The naive system is the same path with no HyDE, no BM25, no rerank and no tool:
+the raw prompt goes to Chroma and the dense top-k goes straight into the prompt.
+
+`sistema_rag`, `sistema_rag_avanzado` and `sistema_final` (`m3/systems.py`) wrap the
+same functions the notebook measures (`make_rag` and `make_agent`, with prompt v2a),
+and the self-test checks that each one sends the generator the same prompts and
+returns the same reply as the function it wraps.
+
+### Corpus and the three decisions
+
+**Corpus.** The catalog itself, `data/exercises-dataset` pinned at `8872272`:
+1324 documents, which are also the 1324 chunks; 407 of them need nothing beyond
+what the user has. Exercise metadata and text are MIT; the images and GIFs
+(© Gym visual) are not used. Records run from 352 to 1059 characters (median 616,
+about 104 words).
+
+**Chunk size and overlap: one exercise per chunk, no overlap.** Dimension 3 grades the
+answer by resolving the exercise *name* against the catalog, and ROUGE-L compares the
+recited *steps* with that exercise's steps. A chunk that splits a record hands the
+generator steps without their name, or a name without its equipment, which is exactly
+the invention we are trying to remove. Every record is short enough to stay whole
+(at most 178 words), so there is nothing to overlap.
+
+**Embedding model: `BAAI/bge-small-en-v1.5`.** Our records are English and long for a
+small encoder: the harness's multilingual MiniLM stops at 128 tokens, and a median record
+runs 158 of its tokens, so it truncates 1202 of the 1324 documents and loses the steps.
+BGE reads up to 512 tokens and truncates none (longest record: 234 tokens). With the raw
+eval prompt as the query, over the 11 cases that have a valid answer in the corpus, BGE
+puts a valid exercise in the top 5 for 0.364 of them; MiniLM, for 0.182.
+
+| hit@k (raw prompt) | k=1 | k=3 | k=5 | k=8 | k=10 |
+|---|---:|---:|---:|---:|---:|
+| multilingual MiniLM | 0.182 | 0.182 | 0.182 | 0.182 | 0.273 |
+| bge-small-en-v1.5 | 0.091 | 0.364 | 0.364 | 0.455 | 0.455 |
+
+**Top-k: 8.** The smallest k that reaches the best hit rate available within the first
+ten results (0.455 at k=8, unchanged at k=10). A valid exercise for a given muscle and
+object is rare in our catalog (one or two documents for glutes, calves, forearms and
+levator scapulae), so k has to be wider than 5 to catch it. The price is about 832
+words of context per prompt (104 words per median exercise).
+
+Both runs measured the same numbers for all three decisions.
+
+One caveat on how the embedding model and k were chosen: both were compared on the eval
+set's own 11 answerable cases, with the raw prompt as the query, not on a separate split
+as the prompt was (see below). With n = 11 one case moves hit@k by 0.09, so these two
+choices are tuned on the set we then report on.
+
+### The eval set
+
+The same 14 examples as M2, unchanged: `eval/eval_set.json`, rubric v1.0, seed 42.
+Three of them have no right answer in the corpus. `adv01` (lats with two cans: the
+catalog has no lats exercise for a matched pair of weights) and `adv04` (a curtain
+rail) must trigger the escape valve. `adv03` must decline the dosing half, which no
+catalog entry answers.
+
+### The escape valve, and the first run's finding
+
+The harness is frozen, and its parser only counts a reply as a refusal if it matches
+`no safe option`, `i know no ` or `there is no ... exercise`. Any other phrasing is
+scored as a wrong answer. So the valve has to come out in that wording.
+
+**First run (prompt v1): the valve collapsed.** The v1 prompt spelled the valve out
+as a template line, right before the request:
+`No safe option: I know no <muscle> exercise that works with <what I have>.` That is
+the exact sentence the M1 LoRA was trained to refuse with. The model copied it as the
+first line of **every** reply on all six RAG rows, 14 of 14 cases, including the 10
+that have a valid answer in the catalog. Most replies then recited the steps of a
+retrieved entry after the valve line. Every RAG row scored 21.4% on dimension 3, and
+those 3 hits were the three adversarial refusals. The answerable hit rate was 0%.
+
+| First run (v1) | Dim 1 | Dim 2 | Dim 3 | Median latency |
+|---|---:|---:|---:|---:|
+| Baseline M2 (no RAG) | 0.787 | 4.714 | 21.4% | 8.3 s |
+| Naive RAG | 0.651 | 1.000 | 21.4% | 6.0 s |
+| Advanced RAG | 0.676 | 1.000 | 21.4% | 17.1 s |
+| Final system (with tool) | 0.679 | 1.286 | 21.4% | 23.9 s |
+
+Retrieval was not the problem: the advanced system already put a valid exercise into
+the context for 6 of the 10 answerable cases, and the model refused all 6. The full
+first run is in `notebooks/M3_rag_v1.ipynb` and `reports/*_m3_v1*`.
+
+**The fix, chosen without touching the eval set.** Two candidate prompts keep the valve
+but never show the sentence. The model's own trained refusal already uses the wording
+the parser expects.
+- **v2a** keeps the v1 layout, and says in prose: "say that there is no safe option
+  instead of recommending one".
+- **v2b** puts the instructions first, then the entries, then the request.
+
+The notebook's section 1 runs v1, v2a and v2b through the naive system on 12 rows of
+M1's validation split. That sample is 8 answerable and 4 impossible, deterministic
+(seed 42), and has no (muscle, object) pair from the eval set.
+
+The rule was fixed before the run. A candidate fixes the collapse if it answers at
+least 50% of the answerable rows and refuses at least 25% of the impossible ones. The
+best one by answered + refused wins (ties go to v2a). If none qualifies, the notebook
+stops there.
+
+| Prompt | Answered (answerable rows) | Refused (impossible rows) | Verdict |
+|---|---:|---:|---|
+| v1 (control) | 0% | 100% | still refuses everything |
+| **v2a** | **75%** | **75%** | **fixes the collapse: chosen** |
+| v2b | 100% | 0% | never refuses |
+
+The sample is small: 75% is 6 of 8 answerable rows and 3 of 4 impossible ones. The probe
+separated the candidates; it did not measure a rate.
+
+Every RAG row in the final run uses v2a. Neither the retriever nor the generator
+changed between the runs, only the prompts: the augmented prompt and the agent's
+decision prompt, which drops the valve sentence the same way.
+
+**Retrieval is the same in both runs.** We compared the retrieved ids per case
+against `reports/replies_m3_v1.json`.
+- Advanced, advanced without hybrid, and advanced without rerank retrieved exactly the
+  same 8 ids on 14 of 14 cases.
+- Naive (13/14) and advanced without HyDE (12/14) differ on `adv02` and `adv04`, with
+  identical queries. In each of those 3 retrievals one entry of the top 8 dropped out
+  and another came in; the rest kept their relative order. The Chroma index is
+  approximate (HNSW) and rebuilt on every run, which is the likely source.
+- The number of cases with a valid exercise in the context is identical in both runs
+  for all five of those rows.
+
+The final system's context also holds the tool's results, so it differs by design
+(6/14 identical).
+
+### Advanced RAG: what each technique attacks
+
+**The naive failures.** The notebook sorts every naive failure by where it happened.
+On 6 of the 10 answerable cases (forearms, glutes, calves, upper back, delts,
+pectorals) no valid exercise reached the top 8: a retrieval failure. On the other 4
+(biceps, abs, triceps, levator scapulae) a valid exercise was in the context and the
+model still did not use it: a generation failure. The three remaining cases have no
+valid answer in the corpus.
+
+The retrieval failures share one cause: the user names an object ("two bags of rice",
+"a bucket with a handle"), the catalog names equipment ("dumbbell", "kettlebell"), and
+nothing in the query bridges the two. That is what each technique was chosen against:
+
+| Technique | Failure it attacks |
+|---|---|
+| hybrid: BM25 + dense, fused with RRF | exact catalog vocabulary that dense embeddings blur: a rare muscle name ("levator scapulae"), the equipment word |
+| rerank: cross-encoder over a pool of 20 | the right muscle in the top-k, but the wrong equipment class ranked first |
+| HyDE: the request plus the LoRA's own draft answer as the query | "two bricks" never says "dumbbell"; the M1 model's draft does, in the catalog's own wording |
+
+**What each one did to retrieval alone** (cases with a valid exercise in the top 8, out
+of the 11 that have one; no generation involved):
+
+| naive | hybrid | rerank | HyDE | hybrid + rerank | all three |
+|---:|---:|---:|---:|---:|---:|
+| 5/11 | 4/11 | 4/11 | 7/11 | 4/11 | 7/11 |
+
+Only HyDE moved retrieval on its own. It brought valid exercises into the context for
+upper back (0 → 4 of 8 entries), triceps (1 → 6), pectorals (0 → 3) and biceps (3 → 8),
+and lost ground on abs (7 → 2). Hybrid and rerank, each on its own, did slightly worse
+than dense: BM25 rewards the words of the prompt, and the prompt still says "rice", not
+"dumbbell". Forearms, glutes, calves and delts stayed at 0/8 under every variant.
+
+### The agentic layer
+
+One tool, `find_exercises(target, equipment)`. It returns the reachable catalog
+exercises for that muscle and equipment class, or says that the catalog has none.
+`target` and `equipment` are enums in the schema (19 muscles, 4 equipment classes).
+The model proposes the call as JSON. `agent.parse_tool_call` accepts code fences,
+single quotes, trailing commas, prose around the JSON and function-call syntax, and
+then validates both arguments against the enums. A rejected call goes back to the
+model with the reason.
+
+The loop allows at most three steps, and a repeated identical call ends it early.
+Whatever happens, the final answer goes through the same augmented prompt as every
+other RAG row, with the tool's results added to the context.
+
+**When it should be used.** The retrieved entries hold no valid exercise for the
+requested muscle and the equipment class the object stands in for. That includes the
+impossible pair: retrieval always returns k plausible entries, and only an exact
+lookup can say "none exist". **When it should not.** The entries already hold a valid
+exercise, or the request is not a lookup at all (the dosing question, the curtain rail).
+
+**What it did** (final run):
+
+| | called | not called |
+|---|---:|---:|
+| **needed** | 4 (forearms, calves, delts, adv01) | 1 (glutes) |
+| **not needed** | 5 (upper back, biceps, triceps, pectorals, adv03) | 4 (abs, levator scapulae, adv02, adv04) |
+
+What the run shows:
+- **adv01 (lats with two cans).** The tool returned an empty result, which is the
+  right answer. The final reply fired the valve: a hit.
+- **Abs and levator scapulae.** The agent answered at the decision step without
+  calling the tool, and both are hits.
+- **adv02.** The model proposed `target: "lower biceps"` three times. The parser
+  rejected it each time with the reason (not one of the 19 muscles). The 3-step cap
+  then stopped the loop, and the answer went out with the retrieved context.
+
+  This is the step cap working in a real run, not only in the self-test.
+- **The tool picks the wrong equipment class.** In 7 of its 9 calls it asked for
+  `body weight`, including forearms with two filled water bottles, which needs the
+  `dumbbell` class. The tool answered exactly what it was asked, so it returned
+  exercises the user cannot do with that object.
+
+  In the first run it had asked for `dumbbell` there and recovered the two forearms
+  entries the retriever missed. With v2a it did not.
+- **Overuse.** It still calls the tool on 5 cases where the context already had what
+  was needed.
+- **It does not use what the tool returns.** In all 9 calls, the next decision step
+  proposed the identical call again, and the repeated-call guard (not the 3-step cap)
+  ended the loop. The answer then came from the final augmented prompt, never from a
+  decision step that had read the tool's result. Each tool use therefore costs two
+  decision generations plus the final one, on top of the HyDE draft: four generations
+  against the advanced system's two (`trace` in `reports/replies_m3.json`).
+
+One caveat: the tool filters with the same apparatus rule (`needs_apparatus`) the
+harness grades with. It is the domain's own rule from M1, not something written for
+the grader, but a reader should know the two share it.
+
+### The evolutionary table
+
+Final run. Same eval set, same harness, same judge, same generator (the M1 LoRA,
+greedy, 448-token budget), and the same augmented prompt (v2a) on every RAG row. Full
+file: `reports/scorecard_m3.csv`; latencies: `reports/latency_m3.csv`.
+
+| System | Dim 1 · similarity (0-1) | Dim 2 · judge (1-5) | Dim 3 · domain hit rate | Median latency |
+|---|---:|---:|---:|---:|
+| Baseline M2 (no RAG) | 0.787 | 4.714 | 21.4% | 7.9 s |
+| Naive RAG (S07) | 0.656 | 3.214 | 7.1% | 7.7 s |
+| Advanced RAG (hybrid + rerank + HyDE) | 0.705 | 2.429 | **42.9%** | 15.2 s |
+| Final system (with tool) | 0.704 | 3.000 | 28.6% | 38.9 s |
+
+Dimension 3 split, answerable / adversarial:
+
+| System | Answerable | Adversarial |
+|---|---:|---:|
+| Baseline | 30% | 0% |
+| Naive | 0% | 25% |
+| Advanced | 30% | 75% |
+| Final | 20% | 50% |
+
+Step grounding (ROUGE-L of the recited steps against the named exercise's real steps)
+goes from 0.550 for the baseline to 0.927 for the naive system and 1.000 for the
+advanced and final systems.
+
+The baseline row was re-generated in this run to measure its latency. Its 14 replies
+are identical to the M2 run, and so are the zero-shot replies (0.694, 5.000, 0.0%,
+5.4 s). That shows the generator is deterministic, so the deltas come from the systems
+and not from noise. Latency is wall-clock and moves a little between runs: the same
+baseline replies took 8.3 s in the first run.
+
+Ablation, removing one technique at a time from the advanced system:
+
+| System | Dim 1 | Dim 2 | Dim 3 | Valid exercise in context | Median latency |
+|---|---:|---:|---:|---:|---:|
+| Advanced (all three) | 0.705 | 2.429 | 42.9% | 7/11 | 15.2 s |
+| without hybrid | 0.731 | 2.214 | 42.9% | 7/11 | 14.7 s |
+| without rerank | 0.664 | 2.071 | 14.3% | 6/11 | 14.9 s |
+| without HyDE | 0.662 | 3.571 | 14.3% | 4/11 | 7.8 s |
+
+### RAGAS
+
+The four metrics as the S10 lab computes them, with three changes:
+- an unparseable verdict is `None` and counted, never a default 3;
+- context precision is rank-weighted and context recall is per reference sentence,
+  as RAGAS defines them;
+- the prompts are in English.
+
+Judge: `Qwen/Qwen2.5-3B-Instruct`, loaded only once the generator and the harness judge
+were out of memory. It fit on the T4 with no fallback in both runs, and all of its
+verdicts parsed (0 unparsed). The harness's dimension-2 judge is still the M2 one
+(`Qwen/Qwen2.5-1.5B-Instruct`). Answer relevancy uses the harness's embeddings.
+Per-case values are in `reports/ragas_m3_detail.json`.
+
+| System | Faithfulness | Answer relevancy | Context precision | Context recall |
+|---|---:|---:|---:|---:|
+| Naive RAG | 0.509 | 0.650 | 0.293 | 0.342 |
+| Advanced RAG | 0.515 | 0.634 | 0.234 | 0.445 |
+| Final system | 0.586 | 0.646 | 0.295 | 0.444 |
+
+First run, for reference (same judge): naive 0.571 / 0.698 / 0.293 / 0.336,
+advanced 0.636 / 0.649 / 0.234 / 0.445, final 0.653 / 0.675 / 0.243 / 0.548.
+
+**How to read context recall.** The reference of each case is its single `esperado`
+exercise, but several exercises can be right: biceps with a pair of dumbbells has 29
+reachable ones, so a context full of valid biceps exercises that lacks the reference one
+still scores low. For `adv01` and `adv04` the reference is a refusal, so recall says
+little about retrieval there. For retrieval alone, the count of cases with a valid
+exercise in the top 8 is the cleaner measure (naive 5/11, advanced 7/11, final 7/11).
+Recall stays in the table because the assignment asks for it.
+
+Faithfulness splits sharply by reply type (computed from the per-case file). Replies
+that recommend an exercise score 0.712 (naive), 0.806 (advanced) and 0.698 (final).
+Refusals score 0.143, 0.297 and 0.474, and 10 of the 20 refusals score exactly 0.
+The judge finds no support in the context for a claim like "I know no biceps exercise
+that works with two bricks". So the system-level faithfulness mostly reflects how
+often a system refuses.
+
+### Honest reading
+
+**What moved what?**
+- *The prompt moved generation.* Prompt v1 made every RAG row refuse 14 of 14 cases.
+  With v2a, the naive system refuses 5, the advanced 8 and the final 7. That is what
+  let retrieval reach the score at all.
+- *Advanced against naive: dimension 3 went from 7.1% to 42.9%* (1 case to 6).
+  - On answerable cases it went from 0% to 30% (upper back, abs, levator scapulae).
+  - On adversarial cases it went from 25% to 75% (adv01 and adv04 added to adv02).
+  - Dimension 1 went from 0.656 to 0.705. Context recall went from 0.342 to 0.445.
+- *HyDE and rerank carry it; hybrid does not.*
+  - **HyDE.** Without it, the valid-exercise-in-context count drops from 7 to 4 of 11,
+    and dimension 3 drops to 14.3%.
+  - **Rerank.** Without it, the valid count drops only from 7 to 6, but dimension 3
+    also drops to 14.3%. The system refuses 8 of the 10 answerable cases, including
+    upper back and abs, where a valid entry was still in the context. Where the valid
+    entry sits in the list matters to this generator, not only whether it is there.
+  - **Hybrid.** Without it, the run gets the same 6 hits and the same 7 of 11, so
+    hybrid adds nothing measurable here.
+- *Against the baseline, the advanced system matches it on answerable cases (30%) and
+  wins on adversarial ones (75% against 0%).*
+  - The answerable hits are different cases. The baseline names a real exercise for
+    biceps, triceps and levator scapulae. The advanced system does so for upper back,
+    abs and levator scapulae.
+  - When the advanced system names an exercise, its steps are the catalog's (ROUGE-L
+    1.000 against 0.550).
+- *Dimensions 1 and 2 do not follow dimension 3.* The M2 judge gave all 8 of the
+  advanced system's refusals a 1, including the three correct ones (adv01, adv02,
+  adv04), and every exercise it named a 5 except one (adv03).
+
+  So on these rows, dimension 2 counts how often the system answers, not whether it
+  should. That is why the advanced row has the best dimension 3 and the lowest judge
+  score of the four main rows. Without rerank, the judge mean falls (2.071) with the refusals. Without
+  HyDE it rises (3.571) because the system refuses less, not because it answers better.
+- *The agent did not improve the harness.* The final system scores 28.6% against the
+  advanced system's 42.9%.
+  - It lost upper back: it called the tool for `body weight` and then refused.
+  - It lost adv04: it answered the curtain rail with a body-weight exercise instead of
+    the valve.
+  - It kept adv01 because the empty tool result supported the valve.
+
+**What did it cost?** Median latency per query, read off the ablation:
+- HyDE costs about +7.4 s (15.2 s with it, 7.8 s without), because it runs a full
+  generation for the draft.
+- Hybrid costs about +0.5 s and rerank about +0.4 s.
+- The agent adds about +23.7 s on top of the advanced system (38.9 s, max 59.3 s). The
+  decision step is an extra generation, and malformed calls are retried.
+- The naive system (7.7 s) costs about the same as the baseline (7.9 s).
+
+For someone at home asking for one exercise, the advanced system is worth it: twice
+the baseline's time buys real catalog exercises with their real steps, and three of
+four adversarial cases handled. Hybrid could be dropped for 0.5 s with no measured
+loss. The agent, at 39 s and a lower score, is not worth it in its current form.
+
+**What failure remains, and of which kind?**
+- *Mostly generation.* In the advanced system, 6 of the 10 answerable cases had a
+  valid exercise in the context. The model used it in 3 (upper back, abs, levator
+  scapulae) and refused the other 3 (biceps, triceps, pectorals). Good context and a
+  wrong decision is a generation failure.
+
+  RAGAS shows the same thing from the other side. When the system does answer, it
+  sticks to the context (faithfulness 0.806 on the advanced system's answers). What
+  fails is the decision to answer, and the probe already showed v2a over-refuses (75%
+  answered on validation).
+- *A retrieval failure remains under it.* Forearms, glutes, calves and delts never get
+  a valid exercise into the context, under any variant. They have 2, 1, 1 and 15 valid
+  documents, and the objects ("two filled water bottles", "a backpack loaded with
+  books", "a filled shopping bag", "a shopping bag of tins") share no words with them. Context recall stays below half
+  (0.445, read with the caveat above: it is measured against one reference exercise).
+  - For forearms and calves the advanced system refused. That is the valve reporting
+    a retrieval miss honestly instead of inventing.
+  - For glutes and delts it named a real catalog exercise that the object cannot
+    stand in for.
+- Context precision is low (0.23–0.30): of 8 entries, few are useful, which is the
+  cost of k = 8.
+
+**What happened with the questions whose answer is not in the corpus?**
+- *adv01 (lats with two cans).* The valve fired in the advanced and final systems.
+  In the final one, the tool confirmed that the catalog has no such exercise. The
+  naive system invented a lats stretch on a stability ball.
+- *adv04 (curtain rail).* The valve fired in the advanced system. The naive and final
+  systems answered with an exercise, which counts as inventing.
+- *adv03 (the dosing question).* Every system missed it: none declined the dosing
+  half, and the valve sentence only talks about the exercise.
+- *adv02 (false premise).* The valve fired in every RAG row, a hit.
+
+Unlike the first run, the valve now carries information. The advanced system refuses
+3 of 4 adversarial cases and 5 of 10 answerable ones. In the first run it refused
+everything.
+
+**Why the agent stays.** It lowers the harness score and is the slowest row. It is
+kept because it is the only part that can say "none exist" with certainty, which it
+did on adv01. Its problems are findings for the next version, not hidden.
+- It calls the tool on 5 cases that did not need it.
+- It picks the wrong equipment class (`body weight` in 7 of 9 calls).
+- It cannot recover from an argument outside the enum.
+- It repeats the same call instead of reading its result (9 of 9 calls).
+
+The next version should skip the decision step when the top 8 already holds an
+exercise for that muscle and equipment class. It should also map the user's object to
+an equipment class without asking the 1.7B model. That mapping must not be built from
+`OBJECT_MAP` in `scripts/macgyver.py`: it lists the eval set's own objects, held-out
+ones included, so using it would leak the answer into the tool.
+
+### Reproducing this
+
+```bash
+PYTHONUTF8=1 uv run python m3/selftest.py   # no model weights; PYTHONUTF8 only matters on Windows
+```
+
+The full run needs a GPU: open
+[`notebooks/M3_rag.ipynb`](notebooks/M3_rag.ipynb) in Colab, pick a T4 runtime, and
+run every cell in order (about an hour). Seeds are fixed (42), decoding is greedy, and
+package versions are pinned in `m3/requirements.txt` and recorded in
+`scorecard_m3_detail.json`.
+
+The prompt probe in section 1 runs first and takes a few minutes. Once
+`reports/replies_m3_v1.json` is in the clone, a cell after generation also checks the
+retrieved ids against the first run.
+
+One known source of variation: the dense index is approximate. Between our two runs,
+it replaced one entry of the top 8 with another in 3 of 70 retrievals (see above).
+
+**Re-running before `m3/` is on `main`.** The notebook clones `main` for the existing
+code (harness, scripts, dataset, LoRA adapter). Once this work is merged the clone
+already has `m3/` and steps 1 and 2 are not needed; until then the setup cell asks for
+it as a zip. Step 3 applies to any rerun.
+
+1. From the repo root, zip the `m3/` folder itself so that the archive contains
+   `m3/corpus.py` (on Windows: right-click `m3` → *Compress to ZIP file*; elsewhere:
+   `zip -r m3.zip m3`). A zip of the folder's *contents* also works.
+2. Either run the setup cell and choose `m3.zip` in the file picker that opens, or
+   upload `m3.zip` to Google Drive, set `M3_ZIP_SOURCE = "drive"` and `DRIVE_ZIP` to
+   its path (default `/content/drive/MyDrive/m3.zip`), and run the cell.
+3. The last cell downloads `m3_results.zip` with every `reports/*_m3*` file of the run
+   (the first run's `*_m3_v1*` files are left out). Unzip it at the repo root, and save
+   the executed notebook (File → Download .ipynb) over `notebooks/M3_rag.ipynb`.
+
+### AI usage
+
+<!-- TODO before delivery: "Parts" and "What we reviewed" are a general description.
+     Confirm them with all four members and make them specific. -->
+
+- **Tool:** Claude (Anthropic). All four members (Juan Andrés Young, José Alejandro
+  Jiménez, David Cuadros and Alberto Cervantes) used it while building this project.
+- **Parts:** writing and debugging code, analysing results, and drafting the report text.
+- **What we reviewed or changed ourselves:** we read and ran what Claude produced before
+  keeping it, and the results in `reports/` come from our own runs on Colab.
+- **Review of the `m3` branch:** Claude Code (Sonnet 5.5) was used to compare the branch
+  with the assignment and to recompute the README figures from `reports/`. It also
+  drafted the README edits of the review commit (disclosures, caveats, this section),
+  which sit in their own commit so they can be reviewed on their own.
+
+The models inside the system (the M1 LoRA on Qwen3-1.7B as generator, Qwen2.5-1.5B and
+Qwen2.5-3B as judges, bge-small-en-v1.5 and MiniLM as embeddings, the cross-encoder
+reranker) are described above and are not part of this declaration.
 
 ## Requirements
 
