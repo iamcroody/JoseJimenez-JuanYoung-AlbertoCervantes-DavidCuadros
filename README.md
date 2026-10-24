@@ -209,7 +209,7 @@ dimensions failed to notice.
 baseline a flat **5.000** on every one of its columns, including the adversarial
 block, while dimension 3 says that same system satisfied the domain criterion on
 **0 of 14** cases. It also ranked zero-shot above the fine-tuned model, 5.000
-against 4.643, which is the reverse of the dimension-3 ordering on the same
+against 4.714, which is the reverse of the dimension-3 ordering on the same
 replies. The two dimensions disagree in direction, and dimension 3 is the one we
 believe, because it is the only one that resolves the answer against the catalog
 instead of reading it.
@@ -233,7 +233,7 @@ written like the reference.
 
 **What the fine-tuning did buy.** Dimension 3 moves from 0.0% to 21.4% overall
 and 30.0% on the answerable cases, and where the model does name a real exercise
-it recites that exercise's real steps reasonably faithfully (ROUGE-L 0.554,
+it recites that exercise's real steps reasonably faithfully (ROUGE-L 0.550,
 n=6). That is the honest size of the M1 result on a set none of whose pairs it
 was trained on.
 
