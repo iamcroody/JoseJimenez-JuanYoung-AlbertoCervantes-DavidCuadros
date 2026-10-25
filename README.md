@@ -9,6 +9,58 @@ see [M3 - Agentic RAG](#m3---agentic-rag-si4006).
 Built on the [exercises dataset](https://github.com/jayounghoyos/exercises-dataset), 1324
 exercises with structured metadata and instructions in 10 languages.
 
+## Contents
+
+- [At a glance](#at-a-glance)
+- [M1 - Fine-tuning baseline](#m1---fine-tuning-baseline-si4006)
+- [M2 - Evaluation harness](#m2---evaluation-harness-si4006)
+  - [What is in the repo](#what-is-in-the-repo)
+  - [The eval set](#the-eval-set)
+  - [The three dimensions](#the-three-dimensions)
+  - [Judge rubric (v1.0)](#judge-rubric-v10)
+  - [Judge bias: what we found and what we did](#judge-bias-what-we-found-and-what-we-did)
+  - [The scorecard](#the-scorecard)
+  - [Honest reading](#honest-reading)
+  - [Reproducing this](#reproducing-this)
+- [M3 - Agentic RAG](#m3---agentic-rag-si4006)
+  - [What is in the repo](#what-is-in-the-repo-1)
+  - [The pipeline](#the-pipeline)
+  - [Corpus and the three decisions](#corpus-and-the-three-decisions)
+  - [The eval set](#the-eval-set-1)
+  - [The escape valve, and the first run's finding](#the-escape-valve-and-the-first-runs-finding)
+  - [Advanced RAG: what each technique attacks](#advanced-rag-what-each-technique-attacks)
+  - [The agentic layer](#the-agentic-layer)
+  - [The evolutionary table](#the-evolutionary-table)
+  - [RAGAS](#ragas)
+  - [Honest reading](#honest-reading-1)
+  - [Reproducing this](#reproducing-this-1)
+  - [AI usage](#ai-usage)
+- [Requirements](#requirements)
+- [Setup](#setup)
+- [Run](#run)
+- [Dataset](#dataset)
+
+## At a glance
+
+| Module | Question it answers | Headline result | Notebook (free Colab T4) |
+|---|---|---|---|
+| [M1](#m1---fine-tuning-baseline-si4006) | Can LoRA teach a 1.7B model to name a real exercise for a household object? | Constraint satisfaction on the held-out test split: 0.0% zero-shot, 18.5% with LoRA. It does not refuse (0 refusals in 154). | [`M1_macgyver.ipynb`](notebooks/M1_macgyver.ipynb) |
+| [M2](#m2---evaluation-harness-si4006) | How do we measure that without being fooled by fluent answers? | Three dimensions on 14 cases. The LLM judge rated the worse system higher; the catalog-based domain hit rate (21.4% for LoRA) is the number we trust. | [`M2_harness.ipynb`](notebooks/M2_harness.ipynb) |
+| [M3](#m3---agentic-rag-si4006) | Does retrieving from the catalog fix the invented exercises? | Domain hit rate: 21.4% baseline, 7.1% naive RAG, **42.9% advanced RAG** (hybrid + rerank + HyDE), 28.6% with the agent tool. | [`M3_rag.ipynb`](notebooks/M3_rag.ipynb) |
+
+**Running it on Colab.** Open the notebook, choose *Runtime → Change runtime type → T4 GPU*,
+and run every cell in order. The setup cell clones this repository with the dataset
+submodule, so nothing needs to be uploaded (M1 clones the branch `FinetuningEntregaM1`;
+M2 and M3 clone `main`). M3 takes about an hour. Seeds are fixed (42) and decoding is
+greedy. The checks that need no GPU run locally; see [Run](#run).
+
+**Where to look first.**
+- Numbers and findings: the *Honest reading* subsection of [M2](#honest-reading) and [M3](#honest-reading-1).
+- Dataset, splits and known biases: [`docs/DATASET.md`](docs/DATASET.md).
+- Raw results: `reports/` (scorecards as CSV, per-case detail as JSON).
+
+[↑ Back to contents](#contents)
+
 ## M1 - Fine-tuning baseline (SI4006)
 
 **Task.** "MacGyver Gym Rat": given a target muscle and a household object, name a real
@@ -57,6 +109,8 @@ learned is the object's role and not the specific phrase. Full numbers in `repor
 **Notebook.** [`notebooks/M1_macgyver.ipynb`](notebooks/M1_macgyver.ipynb) runs the whole
 pipeline on a free Colab T4: model/tokenizer load, dataset build, baseline, LoRA training, and
 qualitative examples.
+
+[↑ Back to contents](#contents)
 
 ## M2 - Evaluation harness (SI4006)
 
@@ -165,14 +219,14 @@ which is the honest description of what a 1.5B judge can tell us.
 
 **Length bias.** `length_bias_probe` scores each reply, then scores it again
 padded with content-free filler ("consistency beats intensity", "stay hydrated").
-Same content, more words. **Measured mean delta: 0.2857 **, and the same 0.2857
+Same content, more words. **Measured mean delta: 0.2857**, and the same 0.2857
 with the length cap applied, so `MAX_ANSWER_CHARS = 1400` mitigated nothing
 here: the padded answers that exceed the cap were already scoring 5, and the
 ones with room to rise are short enough that the cap never touches them. We are
 reporting that rather than claiming the mitigation we shipped.
 
 The mean understates the effect badly, and the reason is worth stating. Thirteen
-of the fourteen plain answers already scored 5, so they had no headroom. The 
+of the fourteen plain answers already scored 5, so they had no headroom. The
 one that did rose, and `adv03` went from **1 to 5** on filler alone. That
 case is an out-of-domain request the model was right to be marked down on, and
 420 characters of "consistency beats intensity" turned the judge's harshest
@@ -273,8 +327,8 @@ set, same rubric version, same seed.
 ### Reproducing this
 
 ```bash
-git clone --recurse-submodules https://github.com/iamcroody/models-for-exercises-dataset.git
-cd models-for-exercises-dataset
+git clone --recurse-submodules https://github.com/iamcroody/JoseJimenez-JuanYoung-AlbertoCervantes-DavidCuadros.git
+cd JoseJimenez-JuanYoung-AlbertoCervantes-DavidCuadros
 
 uv run python eval/harness.py          # self-test, no model weights needed
 
@@ -291,6 +345,8 @@ runtime, and run every cell in order. Seeds are fixed (42), decoding is greedy,
 and the judge model, embedding model and rubric version are written into the CSV
 alongside the scores, so a rerun that disagrees is telling you something real
 rather than sampling noise.
+
+[↑ Back to contents](#contents)
 
 ## M3 - Agentic RAG (SI4006)
 
@@ -785,18 +841,22 @@ The models inside the system (the M1 LoRA on Qwen3-1.7B as generator, Qwen2.5-1.
 Qwen2.5-3B as judges, bge-small-en-v1.5 and MiniLM as embeddings, the cross-encoder
 reranker) are described above and are not part of this declaration.
 
+[↑ Back to contents](#contents)
+
 ## Requirements
 
 - [uv](https://docs.astral.sh/uv/)
 - Git
+
+[↑ Back to contents](#contents)
 
 ## Setup
 
 Clone the repo together with the dataset submodule:
 
 ```bash
-git clone --recurse-submodules https://github.com/iamcroody/models-for-exercises-dataset.git
-cd models-for-exercises-dataset
+git clone --recurse-submodules https://github.com/iamcroody/JoseJimenez-JuanYoung-AlbertoCervantes-DavidCuadros.git
+cd JoseJimenez-JuanYoung-AlbertoCervantes-DavidCuadros
 ```
 
 If you already cloned it without `--recurse-submodules`:
@@ -816,6 +876,8 @@ Install the dependencies:
 ```bash
 uv sync
 ```
+
+[↑ Back to contents](#contents)
 
 ## Run
 
@@ -852,6 +914,8 @@ the exact versions in `m3/requirements.txt`.
 
 Add a dependency with `uv add <package>`, it updates `pyproject.toml` and `uv.lock` for you.
 
+[↑ Back to contents](#contents)
+
 ## Dataset
 
 The dataset lives in `data/exercises-dataset` as a submodule pinned to a fixed commit, so every
@@ -868,3 +932,5 @@ git commit -m "build(data): bump dataset pin"
 
 Exercise media is © [Gym visual](https://gymvisual.com/) and is referenced, not redistributed
 here, see the dataset repo's `NOTICE.md` before reusing it.
+
+[↑ Back to contents](#contents)
