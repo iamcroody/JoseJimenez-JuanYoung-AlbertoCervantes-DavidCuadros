@@ -209,7 +209,7 @@ dimensions failed to notice.
 baseline a flat **5.000** on every one of its columns, including the adversarial
 block, while dimension 3 says that same system satisfied the domain criterion on
 **0 of 14** cases. It also ranked zero-shot above the fine-tuned model, 5.000
-against 4.643, which is the reverse of the dimension-3 ordering on the same
+against 4.714, which is the reverse of the dimension-3 ordering on the same
 replies. The two dimensions disagree in direction, and dimension 3 is the one we
 believe, because it is the only one that resolves the answer against the catalog
 instead of reading it.
@@ -233,7 +233,7 @@ written like the reference.
 
 **What the fine-tuning did buy.** Dimension 3 moves from 0.0% to 21.4% overall
 and 30.0% on the answerable cases, and where the model does name a real exercise
-it recites that exercise's real steps reasonably faithfully (ROUGE-L 0.554,
+it recites that exercise's real steps reasonably faithfully (ROUGE-L 0.550,
 n=6). That is the honest size of the M1 result on a set none of whose pairs it
 was trained on.
 
@@ -757,20 +757,14 @@ retrieved ids against the first run.
 One known source of variation: the dense index is approximate. Between our two runs,
 it replaced one entry of the top 8 with another in 3 of 70 retrievals (see above).
 
-**Re-running before `m3/` is on `main`.** The notebook clones `main` for the existing
-code (harness, scripts, dataset, LoRA adapter). Once this work is merged the clone
-already has `m3/` and steps 1 and 2 are not needed; until then the setup cell asks for
-it as a zip. Step 3 applies to any rerun.
+**Saving a rerun.** The setup cell clones `main`, which already holds `m3/`, so it
+needs no upload. The last cell downloads `m3_results.zip` with every `reports/*_m3*`
+file of the run (the first run's `*_m3_v1*` files are left out). Unzip it at the repo
+root, and save the executed notebook (File → Download .ipynb) over
+`notebooks/M3_rag.ipynb`.
 
-1. From the repo root, zip the `m3/` folder itself so that the archive contains
-   `m3/corpus.py` (on Windows: right-click `m3` → *Compress to ZIP file*; elsewhere:
-   `zip -r m3.zip m3`). A zip of the folder's *contents* also works.
-2. Either run the setup cell and choose `m3.zip` in the file picker that opens, or
-   upload `m3.zip` to Google Drive, set `M3_ZIP_SOURCE = "drive"` and `DRIVE_ZIP` to
-   its path (default `/content/drive/MyDrive/m3.zip`), and run the cell.
-3. The last cell downloads `m3_results.zip` with every `reports/*_m3*` file of the run
-   (the first run's `*_m3_v1*` files are left out). Unzip it at the repo root, and save
-   the executed notebook (File → Download .ipynb) over `notebooks/M3_rag.ipynb`.
+The setup cell can still unpack `m3/` from a zip (`M3_ZIP_SOURCE`), which only matters
+when running the notebook against a branch whose `m3/` differs from the one on `main`.
 
 ### AI usage
 
@@ -845,6 +839,16 @@ uv run python eval/build_eval_set.py     # rebuilds eval/eval_set.json from the 
 
 The full scorecard needs a GPU and runs in
 [`notebooks/M2_harness.ipynb`](notebooks/M2_harness.ipynb) on a free Colab T4.
+
+M3, the agentic RAG:
+
+```bash
+uv run python m3/selftest.py             # self-test: no model weights needed
+```
+
+The index, the four systems, the scorecard and RAGAS need a GPU and run in
+[`notebooks/M3_rag.ipynb`](notebooks/M3_rag.ipynb) on a free Colab T4, which installs
+the exact versions in `m3/requirements.txt`.
 
 Add a dependency with `uv add <package>`, it updates `pyproject.toml` and `uv.lock` for you.
 
