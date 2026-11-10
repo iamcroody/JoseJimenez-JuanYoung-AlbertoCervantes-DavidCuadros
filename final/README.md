@@ -9,7 +9,7 @@ llena en las features posteriores del Módulo 5; aquí vive el índice.
 | Carpeta / archivo | Qué contiene | Estado |
 | --- | --- | --- |
 | `reporte.md` | Reporte final con todas las secciones que pide la asignación (problema, decisiones, tabla evolutiva, ablación, análisis de errores, limitaciones, ética, quién hizo qué, uso de IA). | Esqueleto (TODO) |
-| `efficiency/` | Técnica de eficiencia elegida (cuantización / destilación / LoRA en modelo menor) sobre el componente más pesado del scorecard, con tabla antes/después y presupuesto de pérdida aceptable fijado *antes* de medir. | Pendiente |
+| `efficiency/` | Técnica de eficiencia elegida (int4 nf4 QLoRA-style sobre el generador, el componente más lento) con tabla antes/después, presupuesto de pérdida aceptable fijado *antes* de medir, y las pruebas no-exactitud (invariancia, válvula, adversarial) repetidas sobre la versión cuantizada. Ver `efficiency/README.md`. Números en Colab T4. | Código + notebook listos; tabla se llena en T4 |
 | `deploy/` | Código de despliegue (Gradio / Streamlit en HF Spaces) o enlace al repo del Space: health check, logging JSON estructurado por petición, observabilidad en W&B. | Pendiente |
 | `ENVIRONMENT_NOTES.md` | Restricciones del entorno local (sin red, sin GPU) y qué self-tests corren localmente vs cuáles se verifican en Colab T4. | Hecho |
 
