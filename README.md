@@ -1,13 +1,53 @@
-# models-for-exercises-dataset
+# MacGyver Gym Rat
 
-This project fine-tunes a small language model to recommend a real exercise you can do with a
-household object (like water bottles or a backpack) instead of the gym equipment you don't
-have, or tell you honestly when nothing works. In its final form (M3) it looks the request
-up in the catalog before answering, and says plainly when the catalog has nothing that fits:
-see [M3 - Agentic RAG](#m3---agentic-rag-si4006).
+**In one sentence:** MacGyver Gym Rat helps someone who planned to train a muscle but has no
+gym equipment decide which real catalog exercise to do with a household object they already
+have (a water bottle, a backpack), or tells them honestly when nothing safe fits, so they do
+not improvise something that does not train the muscle or could hurt them.
+
+It is a LoRA fine-tuned `Qwen3-1.7B` that, in its final form, looks the request up in a
+catalog of 1324 real exercises before answering, and says plainly when the catalog has
+nothing that fits (see [M3 - Agentic RAG](#m3---agentic-rag-si4006)). The final module (M5)
+quantizes the generator for efficiency and ships it as a public Gradio Space with a visual
+component, a production safety filter, a health check, JSON logging and W&B observability
+(see [M5 - Final (eficiencia + despliegue)](#m5---final-eficiencia--despliegue-si4006)).
+
+- **Live demo (HF Spaces):** TODO, paste the public Space URL here after the first deploy
+  (`https://huggingface.co/spaces/<org>/macgyver-gym-rat`). It is a placeholder on purpose:
+  the deploy code reads URLs from the environment and no URL is invented.
+- **W&B project:** TODO, paste the project link here after the first run with `WANDB_API_KEY`
+  set (`https://wandb.ai/<entity>/macgyver-gym-rat-m5`). Without the key, W&B is a silent
+  no-op and the app still runs.
+- **Final report:** [`final/reporte.md`](final/reporte.md) covers the problem, the system
+  diagram, the justified decisions, the evolutionary table, the ablation, the error analysis,
+  the limitations, the ethics questions and who did what.
 
 Built on the [exercises dataset](https://github.com/jayounghoyos/exercises-dataset), 1324
 exercises with structured metadata and instructions in 10 languages.
+
+## How to run it in a few steps
+
+Checks that need no GPU run locally; the full scorecards, training, the efficiency table and
+the live demo need a free Colab T4 or the Space. See [Setup](#setup) and [Run](#run) for the
+complete commands.
+
+```bash
+# 1. Clone with the dataset submodule (the catalog is pinned at commit 8872272)
+git clone --recurse-submodules https://github.com/iamcroody/JoseJimenez-JuanYoung-AlbertoCervantes-DavidCuadros.git
+cd JoseJimenez-JuanYoung-AlbertoCervantes-DavidCuadros
+
+# 2. Install deps (needs network; one-time)
+uv sync
+
+# 3. Run the no-GPU self-tests (no model weights downloaded)
+uv run python eval/harness.py        # M2 harness self-test
+uv run python m3/selftest.py         # M3 pipeline self-test
+uv run python final/efficiency/selftest.py   # M5 efficiency plumbing
+uv run python final/deploy/selftest.py       # M5 deploy plumbing
+
+# 4. Full runs (GPU): open the matching notebook on a free Colab T4 and run every cell.
+#    M1 clones branch FinetuningEntregaM1; M2, M3 and M5 clone the current working branch / main.
+```
 
 ## Contents
 
@@ -35,6 +75,8 @@ exercises with structured metadata and instructions in 10 languages.
   - [Honest reading](#honest-reading-1)
   - [Reproducing this](#reproducing-this-1)
   - [AI usage](#ai-usage)
+- [M5 - Final (eficiencia + despliegue)](#m5---final-eficiencia--despliegue-si4006)
+- [Final report](#final-report)
 - [Requirements](#requirements)
 - [Setup](#setup)
 - [Run](#run)
@@ -47,6 +89,7 @@ exercises with structured metadata and instructions in 10 languages.
 | [M1](#m1---fine-tuning-baseline-si4006) | Can LoRA teach a 1.7B model to name a real exercise for a household object? | Constraint satisfaction on the held-out test split: 0.0% zero-shot, 18.5% with LoRA. It does not refuse (0 refusals in 154). | [`M1_macgyver.ipynb`](notebooks/M1_macgyver.ipynb) |
 | [M2](#m2---evaluation-harness-si4006) | How do we measure that without being fooled by fluent answers? | Three dimensions on 14 cases. The LLM judge rated the worse system higher; the catalog-based domain hit rate (21.4% for LoRA) is the number we trust. | [`M2_harness.ipynb`](notebooks/M2_harness.ipynb) |
 | [M3](#m3---agentic-rag-si4006) | Does retrieving from the catalog fix the invented exercises? | Domain hit rate: 21.4% baseline, 7.1% naive RAG, **42.9% advanced RAG** (hybrid + rerank + HyDE), 28.6% with the agent tool. | [`M3_rag.ipynb`](notebooks/M3_rag.ipynb) |
+| [M5](#m5---final-eficiencia--despliegue-si4006) | Can we make it cheaper to run and ship it safely to real users? | int4 (nf4) quantization of the generator (the latency bottleneck), plus a public Gradio Space with a visual component, a production safety filter, health check, JSON logging and W&B. Before/after numbers come from the Colab T4 run: see [`final/efficiency/RESULTS.md`](final/efficiency/RESULTS.md). | [`notebooks/M5_efficiency.ipynb`](notebooks/M5_efficiency.ipynb) |
 
 **Running it on Colab.** Open the notebook, choose *Runtime → Change runtime type → T4 GPU*,
 and run every cell in order. The setup cell clones this repository with the dataset
@@ -56,6 +99,8 @@ greedy. The checks that need no GPU run locally; see [Run](#run).
 
 **Where to look first.**
 - Numbers and findings: the *Honest reading* subsection of [M2](#honest-reading) and [M3](#honest-reading-1).
+- The final report with every assignment section: [`final/reporte.md`](final/reporte.md).
+- The M5 integrator (efficiency, deploy, CI, reproducibility): [`final/`](final/) and [M5 below](#m5---final-eficiencia--despliegue-si4006).
 - Dataset, splits and known biases: [`docs/DATASET.md`](docs/DATASET.md).
 - Raw results: `reports/` (scorecards as CSV, per-case detail as JSON).
 
@@ -843,6 +888,89 @@ reranker) are described above and are not part of this declaration.
 
 [↑ Back to contents](#contents)
 
+## M5 - Final (eficiencia + despliegue) (SI4006)
+
+**In plain words.** M5 takes the M3 system and does two things the earlier modules did not:
+it makes the slowest part cheaper to run, and it ships the whole thing to real users behind a
+safety filter. Nothing in the pipeline is rewritten; M5 wraps what M3 already measured.
+
+### Efficiency: int4 (nf4) quantization of the generator
+
+**Which component and why.** The M3 ablation shows latency is dominated by the *generator*,
+not retrieval: HyDE is a full extra generation before retrieving, so each advanced-RAG query
+pays two passes of the 1.7B model (15.2 s median), and the agent adds more generations still
+(38.9 s). Retrieval (dense index + BM25 + a small cross-encoder) is cheap next to that. So the
+efficiency technique targets the generator.
+
+**The technique.** Load the base `Qwen/Qwen3-1.7B` in 4 bits with `bitsandbytes` (nf4, double
+quant, fp16 compute) and attach the committed LoRA adapter `models/r16-all-linear` on top (a
+quantized `Linear` cannot absorb the LoRA weights, so they are applied with `peft`, not
+fused). This is the `four_bit` branch the project already uses to train and evaluate. The RAG
+pipeline is untouched: `efficiency.load_int4_generator()` returns a `generate(prompt) -> reply`
+with the same signature `systems.bind` expects, so `sistema_rag_avanzado` and `sistema_final`
+run over the quantized generator without a line changed.
+
+**Acceptable-loss budget, fixed before measuring.** We accept losing up to 5 points of domain
+hit rate (dimension 3) on the advanced RAG system, dropping from 42.9% to no less than 37.9%,
+as long as int4 lowers peak VRAM below the fp16 footprint and does not raise p95 latency. The
+before/after table, the invariance / valve / adversarial re-run on the quantized version, and
+the explicit "budget held?" verdict live in [`final/efficiency/RESULTS.md`](final/efficiency/RESULTS.md)
+and are filled by the Colab T4 run (`notebooks/M5_efficiency.ipynb`); no number is invented.
+See [`final/efficiency/README.md`](final/efficiency/README.md) for the full rationale and the
+discarded alternatives (int8, distillation, a smaller-model LoRA).
+
+### Deployment: public Gradio Space
+
+A Gradio app ([`final/deploy/`](final/deploy/README.md)) runs the MacGyver Gym Rat system end
+to end and adds the production pieces the rubric asks for:
+
+- **Visual component.** Shows the catalog image/GIF of the recommended exercise (not an
+  AI-generated image), satisfying the M4 visual requirement. The UI makes clear the system
+  *suggests*; a person decides.
+- **Production safety filter (ethics mitigation, section 7 of `docs/PROJECT_DEFINITION.md`).**
+  After the model answers, the named exercise is resolved against the reachable catalog with
+  the *same dimension-3 logic as the harness* (`harness.domain_check`, imported, not
+  duplicated). If it does not pass, the app shows a "no safe option" message instead of an
+  unverified recommendation.
+- **Health check.** `health_check(state)` reports liveness (generator and embedder loaded,
+  Chroma index responds) with no real query.
+- **JSON logging, no PII.** One JSON Lines record per request: timestamp, latency, which
+  components ran (rag/rerank/hyde/tool/vision), whether the valve fired, whether the filter
+  passed. Only the muscle (catalog vocabulary) and the object's equipment *class* are logged,
+  never the user's free text.
+- **W&B observability.** Per-request latency plus usage metrics (recommendations vs refusals,
+  filter blocks, component frequency). Missing `wandb` or `WANDB_API_KEY` is a silent no-op,
+  so there are no mandatory paid keys; keys, when present, go in the Space secrets, never in
+  the repo.
+
+The demo URL and the W&B project link are placeholders until the team deploys (see the top of
+this README).
+
+### Continuous integration and reproducibility
+
+`.github/workflows/harness.yml` runs on every push and pull request (Ubuntu, Python 3.12,
+`numpy + rouge_score` only, no GPU): it rebuilds the splits from the submodule, runs the five
+no-GPU self-tests, runs a deterministic harness smoke test over 5 eval cases
+([`final/ci/harness_smoke.py`](final/ci/harness_smoke.py)) that **fails if the dimension-3
+score drops** below the committed baseline, and checks the eval set is byte-identical to the
+regenerated one. That is the assignment's optional-and-valued GitHub Action. The quality guard
+over the *real* model outputs lives in the Colab notebooks (a free CI runner has no GPU or Qwen
+weights). [`final/REPRODUCIBILITY.md`](final/REPRODUCIBILITY.md) pins every model id, the seed
+(42), greedy decoding, and the notebook run order mapped to each `reports/*.csv`.
+
+[↑ Back to contents](#contents)
+
+## Final report
+
+The complete final report, with every section the assignment requires (problem and user,
+system diagram, justified decisions with discarded alternatives, evolutionary table with
+latency, ablation, error analysis with at least 5 failing cases, limitations, the three ethics
+questions, who did what, AI usage), is in [`final/reporte.md`](final/reporte.md). It is grounded
+in the same `reports/*.csv` and module docs this README summarizes; the efficiency row, the
+demo URL and the W&B link are the only placeholders, filled by the Colab T4 run and the deploy.
+
+[↑ Back to contents](#contents)
+
 ## Requirements
 
 - [uv](https://docs.astral.sh/uv/)
@@ -911,6 +1039,19 @@ uv run python m3/selftest.py             # self-test: no model weights needed
 The index, the four systems, the scorecard and RAGAS need a GPU and run in
 [`notebooks/M3_rag.ipynb`](notebooks/M3_rag.ipynb) on a free Colab T4, which installs
 the exact versions in `m3/requirements.txt`.
+
+M5, the final integrator (efficiency + deploy):
+
+```bash
+uv run python final/efficiency/selftest.py   # self-test: efficiency plumbing (numpy only)
+uv run python final/deploy/selftest.py        # self-test: deploy plumbing (no GPU/network)
+uv run python final/ci/harness_smoke.py       # deterministic harness smoke (what CI runs)
+```
+
+The efficiency before/after table needs a GPU and runs in
+[`notebooks/M5_efficiency.ipynb`](notebooks/M5_efficiency.ipynb) on a free Colab T4; the Space
+is deployed from [`final/deploy/`](final/deploy/README.md). Both the M5 notebook and the Space
+clone the current working branch / main.
 
 Add a dependency with `uv add <package>`, it updates `pyproject.toml` and `uv.lock` for you.
 
