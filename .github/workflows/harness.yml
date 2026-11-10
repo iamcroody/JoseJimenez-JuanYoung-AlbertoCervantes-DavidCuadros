@@ -1,0 +1,102 @@
+# CI del harness — la pieza opcional-y-valorada del PDF, factible en CPU.
+#
+# El PDF pide "una GitHub Action que en cada push corra el harness sobre 3 a 5
+# casos y falle si el puntaje cae". El harness completo (dimensiones 1 y 2)
+# necesita un embedder y un modelo juez, y las salidas reales del modelo
+# necesitan una T4 y los pesos de Qwen3-1.7B. Nada de eso cabe en un runner de
+# CI gratuito. Así que este workflow hace lo que SÍ es factible y verifica el
+# camino de código:
+#
+#   1. Reconstruye los splits desde el submódulo del dataset (disponible en CI
+#      vía actions/checkout con submodules: recursive y red presente).
+#   2. Corre los self-tests SIN GPU que ejercitan la plomería: el scorer (M1),
+#      el harness (M2), el self-test de M3, y los de eficiencia y despliegue (M5).
+#   3. Corre un humo determinista del harness sobre 5 casos contra un sistema
+#      STUB, y FALLA si la dimensión 3 cae por debajo de la línea base comiteada.
+#   4. Verifica la integridad del eval set: `build_eval_set.py` debe regenerar
+#      `eval/eval_set.json` byte-idéntico (la "misma vara" para cada tabla).
+#
+# El guardián de regresión de calidad sobre las salidas del modelo REAL corre
+# en el notebook de Colab T4 (ver final/REPRODUCIBILITY.md). CI cuida la
+# plomería y la integridad del eval set, no la calidad del modelo. El job NO
+# descarga Qwen ni requiere GPU: solo instala numpy + rouge_score, que es todo
+# lo que estos self-tests importan en tiempo de ejecución (torch, chromadb,
+# sentence-transformers y rank_bm25 solo hacen falta para las corridas
+# completas con recuperación/juez, que viven en Colab).
+
+name: harness
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  no-gpu-selftests:
+    name: Self-tests sin GPU + humo del harness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout con submódulo del dataset
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias mínimas de CPU
+        # Solo lo que importan los self-tests y el humo. Sin torch, sin
+        # chromadb, sin sentence-transformers, sin rank_bm25: esos pesan y solo
+        # hacen falta para la recuperación/juez completos (Colab T4).
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy rouge_score
+
+      - name: Construir splits desde el submódulo (seed 42)
+        # scripts/02_score.py y el self-test de M2 necesitan los splits
+        # procesados; se reconstruyen de forma determinista desde el catálogo.
+        run: python scripts/01_macgyver_data.py
+
+      - name: Self-test del scorer (M1)
+        run: python scripts/02_score.py
+
+      - name: Self-test del harness (M2)
+        run: python eval/harness.py
+
+      - name: Self-test de M3 (tool-call, válvula, nombres de sistemas)
+        # Incluido en CI: aunque M3 usa chromadb/sentence-transformers/rank_bm25
+        # en la corrida completa, su SELF-TEST solo toca partes puras (parser de
+        # tool-call, RRF, válvula de escape, nombres de sistemas) y corre con
+        # numpy + rouge_score. Los imports pesados de rag/ragas son perezosos
+        # (dentro de funciones), así que importar el módulo no los activa.
+        run: python m3/selftest.py
+
+      - name: Self-test de eficiencia (M5)
+        run: python final/efficiency/selftest.py
+
+      - name: Self-test de despliegue (M5)
+        run: python final/deploy/selftest.py
+
+      - name: Humo del harness — 5 casos vs sistema STUB (falla si el puntaje cae)
+        # Realiza el "3 a 5 casos ... falle si el puntaje cae" del PDF de forma
+        # determinista en CPU: dimensión 3 sobre un stub, con línea base
+        # comiteada. El guardián sobre el modelo REAL corre en Colab.
+        run: python final/ci/harness_smoke.py
+
+      - name: Integridad del eval set (la "misma vara")
+        # El submódulo/catálogo está disponible en CI, así que regeneramos el
+        # eval set y fallamos si deja de ser byte-idéntico al comiteado. Esto
+        # mantiene honesto el "mismo eval set y harness para cada fila de tabla".
+        run: |
+          python eval/build_eval_set.py
+          if ! git diff --quiet -- eval/eval_set.json; then
+            echo "FAILED: eval/eval_set.json no es byte-idéntico a lo que"
+            echo "build_eval_set.py regenera. El eval set congelado cambió."
+            git --no-pager diff --stat -- eval/eval_set.json
+            exit 1
+          fi
+          echo "eval set OK: byte-idéntico al regenerado"
