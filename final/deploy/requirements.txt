@@ -1,0 +1,30 @@
+# Dependencias del Space (Módulo 5 — despliegue). Versiones EXACTAS (no rangos),
+# reproducibles en un Colab T4 gratuito y en Hugging Face Spaces (SDK=gradio).
+#
+# El stack de inferencia es el MISMO que m3/requirements.txt y
+# final/efficiency/requirements.txt para que el índice RAG, el harness y el
+# generador se construyan igual que en M3/M5-eficiencia (sin deriva de versiones).
+
+# UI del Space.
+gradio==5.9.1
+
+# Stack de inferencia M3 (idéntico a m3/requirements.txt).
+transformers==5.16.1
+peft==0.20.0
+sentence-transformers==6.0.1
+chromadb==1.5.5
+rouge_score==0.1.2
+opentelemetry-api==1.42.1
+opentelemetry-sdk==1.42.1
+
+# Ruta cuantizada int4 (nf4) de FEAT-002, usada cuando QUANTIZED=1. Mismo pin que
+# final/efficiency/requirements.txt; 0.44.1 funciona con la build de torch del T4.
+bitsandbytes==0.44.1
+
+# Observabilidad. wandb hace no-op elegante si falta WANDB_API_KEY (ver
+# wandb_utils.py), así que NO es una clave de pago obligatoria.
+wandb==0.18.7
+
+# torch: en Colab/Spaces con GPU viene preinstalado en la imagen; se pina para
+# reproducibilidad del entorno local. Ajustar a la build CUDA del Space si aplica.
+torch==2.5.1

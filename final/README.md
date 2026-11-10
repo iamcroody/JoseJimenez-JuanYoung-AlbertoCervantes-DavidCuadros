@@ -10,7 +10,7 @@ llena en las features posteriores del Módulo 5; aquí vive el índice.
 | --- | --- | --- |
 | `reporte.md` | Reporte final con todas las secciones que pide la asignación (problema, decisiones, tabla evolutiva, ablación, análisis de errores, limitaciones, ética, quién hizo qué, uso de IA). | Esqueleto (TODO) |
 | `efficiency/` | Técnica de eficiencia elegida (int4 nf4 QLoRA-style sobre el generador, el componente más lento) con tabla antes/después, presupuesto de pérdida aceptable fijado *antes* de medir, y las pruebas no-exactitud (invariancia, válvula, adversarial) repetidas sobre la versión cuantizada. Ver `efficiency/README.md`. Números en Colab T4. | Código + notebook listos; tabla se llena en T4 |
-| `deploy/` | Código de despliegue (Gradio / Streamlit en HF Spaces) o enlace al repo del Space: health check, logging JSON estructurado por petición, observabilidad en W&B. | Pendiente |
+| `deploy/` | Código de despliegue (Gradio en HF Spaces): app end-to-end con componente visual (imagen/GIF del catálogo), health check, logging JSON estructurado por petición (sin PII), observabilidad en W&B (no-op sin clave) y el filtro de satisfacción de restricciones de la sección 7. Ver `deploy/README.md`. Self-test local sin GPU/red; URL del Space y enlace W&B son placeholders que el equipo llena tras el deploy. | Código + self-test listos; deploy y URLs en el Space |
 | `ENVIRONMENT_NOTES.md` | Restricciones del entorno local (sin red, sin GPU) y qué self-tests corren localmente vs cuáles se verifican en Colab T4. | Hecho |
 
 ## Dónde se ejecuta
