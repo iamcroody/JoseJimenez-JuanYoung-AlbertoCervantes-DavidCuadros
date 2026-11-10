@@ -1,4 +1,4 @@
-# CI del harness — la pieza opcional-y-valorada del PDF, factible en CPU.
+# CI del harness: la pieza opcional-y-valorada del PDF, factible en CPU.
 #
 # El PDF pide "una GitHub Action que en cada push corra el harness sobre 3 a 5
 # casos y falle si el puntaje cae". El harness completo (dimensiones 1 y 2)
@@ -81,7 +81,7 @@ jobs:
       - name: Self-test de despliegue (M5)
         run: python final/deploy/selftest.py
 
-      - name: Humo del harness — 5 casos vs sistema STUB (falla si el puntaje cae)
+      - name: Humo del harness (5 casos vs sistema STUB, falla si el puntaje cae)
         # Realiza el "3 a 5 casos ... falle si el puntaje cae" del PDF de forma
         # determinista en CPU: dimensión 3 sobre un stub, con línea base
         # comiteada. El guardián sobre el modelo REAL corre en Colab.
