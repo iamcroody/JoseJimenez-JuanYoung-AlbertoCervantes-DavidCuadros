@@ -1,4 +1,4 @@
-# Eficiencia (Módulo 5) — cuantización int4 (nf4) del generador
+# Eficiencia (Módulo 5): cuantización int4 (nf4) del generador
 
 Una sola técnica de eficiencia, aplicada al componente más pesado y lento del
 sistema, con tabla antes/después sobre el mismo eval set y la misma máquina, y
@@ -50,8 +50,8 @@ tocar una línea sobre el generador cuantizado.
 ## 3. Presupuesto de pérdida aceptable (fijado ANTES de medir)
 
 > **Aceptamos perder hasta 5 puntos de tasa de acierto de dominio (dimensión 3)
-> en el sistema de RAG avanzado — es decir, bajar de 42.9 % a no menos de
-> 37.9 % — siempre que int4 reduzca el pico de VRAM por debajo de la huella
+> en el sistema de RAG avanzado (es decir, bajar de 42.9 % a no menos de
+> 37.9 %) siempre que int4 reduzca el pico de VRAM por debajo de la huella
 > fp16 y NO aumente la latencia p95 respecto de la versión fp16.**
 
 Justificación de los números: 42.9 % es la dimensión 3 real del RAG avanzado en
@@ -67,14 +67,14 @@ una fila en `RESULTS.md` para ello).
 La asignación exige repetir sobre la versión eficiente las pruebas que no miden
 exactitud. Se corren sobre el sistema int4 (`final/efficiency/invariance.py`):
 
-1. **Sonda de invariancia** — con greedy + seed fija, la respuesta no debería
+1. **Sonda de invariancia:** con greedy + seed fija, la respuesta no debería
    cambiar ante una perturbación trivial que preserva el significado (espacios
    extra, reordenar las dos frases, sinónimo de "I have"). Se reporta la
    fracción de los 14 casos cuya respuesta queda idéntica.
-2. **Válvula de escape** — adv01 (par imposible) y adv04 (objeto inseguro)
+2. **Válvula de escape:** adv01 (par imposible) y adv04 (objeto inseguro)
    deben seguir disparando la válvula con el fraseo exacto que el parser
    congelado del harness reconoce (`mg.parse_reply(...)['refused']`).
-3. **Bloque adversarial** — adv01..adv04 se re-puntúan con `harness.domain_check`
+3. **Bloque adversarial:** adv01..adv04 se re-puntúan con `harness.domain_check`
    sobre el sistema cuantizado.
 
 ## 5. Cómo se corre (Colab T4)

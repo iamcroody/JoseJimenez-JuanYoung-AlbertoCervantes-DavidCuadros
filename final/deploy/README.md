@@ -1,11 +1,11 @@
-# Módulo 5 — Despliegue (Hugging Face Spaces, Gradio)
+# Módulo 5: Despliegue (Hugging Face Spaces, Gradio)
 
 App Gradio que corre el sistema **MacGyver Gym Rat** de punta a punta: recibe un
 músculo objetivo y un objeto casero, devuelve una recomendación de ejercicio del
 catálogo **o un rechazo honesto**, y muestra la **imagen/GIF del catálogo** del
 ejercicio recomendado (el componente visual que pide M4). Incluye las tres piezas
-de producción que verifica la rúbrica —health check, logging JSON por petición y
-observabilidad W&B— y el **filtro de satisfacción de restricciones** de la
+de producción que verifica la rúbrica (health check, logging JSON por petición y
+observabilidad W&B) y el **filtro de satisfacción de restricciones** de la
 sección 7 de `docs/PROJECT_DEFINITION.md`.
 
 No reimplementa nada: reutiliza el pipeline M3 (`m3/rag.py`, `m3/systems.py`,
@@ -15,9 +15,9 @@ para el filtro, y el generador int4 de la feature de eficiencia
 
 ## Enlaces (los llena el equipo tras el primer deploy)
 
-- **Space en vivo:** TODO — pegar aquí la URL pública tras desplegar
+- **Space en vivo:** TODO: pegar aquí la URL pública tras desplegar
   (`https://huggingface.co/spaces/<org>/macgyver-gym-rat`).
-- **Proyecto W&B:** TODO — pegar aquí el enlace del proyecto tras la primera
+- **Proyecto W&B:** TODO: pegar aquí el enlace del proyecto tras la primera
   corrida con `WANDB_API_KEY` configurada
   (`https://wandb.ai/<entidad>/macgyver-gym-rat-m5`).
 
@@ -76,12 +76,12 @@ filtro de producción + la resolución de imagen sobre un catálogo/dataset fals
    Si el Space no permite submódulos, copiar `data/exercises-dataset/` al repo del
    Space (incluyendo `images/` y `videos/`, necesarias para el componente visual).
 3. **Secrets (Settings → Repository secrets):**
-   - `WANDB_API_KEY` — opcional. Sin ella, la observabilidad W&B hace no-op y la
+   - `WANDB_API_KEY` (opcional). Sin ella, la observabilidad W&B hace no-op y la
      app corre igual (requisito: cero claves de pago obligatorias). **Nunca** se
      commitea en el repo.
-   - `WANDB_PROJECT` — opcional, nombre del proyecto (por defecto
+   - `WANDB_PROJECT` (opcional), nombre del proyecto (por defecto
      `macgyver-gym-rat-m5`).
-   - `QUANTIZED` — `1` para cargar el generador en int4 (nf4) de FEAT-002; `0`
+   - `QUANTIZED`: `1` para cargar el generador en int4 (nf4) de FEAT-002; `0`
      (por defecto) para fp16.
 
 ## Health check
@@ -100,7 +100,7 @@ filtro de producción + la resolución de imagen sobre un catálogo/dataset fals
   ```
 - **Qué devuelve:** `{status, models_loaded, index_ready, git_commit, timestamp,
   quantized, checks}`. Comprueba que el generador y el embedder cargaron y que un
-  ping trivial a Chroma responde —**sin** ejecutar una recomendación—. `status` es
+  ping trivial a Chroma responde (**sin** ejecutar una recomendación). `status` es
   `ok` / `degraded` (índice caído) / `down` (modelos no cargados).
 
 ## Formato del logging
@@ -137,7 +137,7 @@ cada componente (`rag/rerank/hyde/tool/vision`). Si falta `wandb` o
 `WANDB_API_KEY`, todo es un no-op silencioso y el log JSON local sigue siendo la
 fuente de verdad.
 
-## Filtro de producción (mitigación ética — sección 7)
+## Filtro de producción (mitigación ética, sección 7)
 
 Tras la respuesta del modelo, `app.passes_production_filter` resuelve el ejercicio
 nombrado contra el catálogo alcanzable **con la misma lógica de la dimensión 3 del
@@ -152,7 +152,7 @@ UI deja claro que el sistema **sugiere**; la persona decide.
 El generador fp16 (Qwen3-1.7B + LoRA) más el índice denso, el reranker y HyDE
 pueden no caber en el hardware gratuito de Spaces. En ese caso se despliega la
 versión **cuantizada** (`QUANTIZED=1`), que carga el generador en **int4 (nf4)**
-—la técnica de eficiencia de FEAT-002— reduciendo la VRAM del modelo base sin
+(la técnica de eficiencia de FEAT-002) reduciendo la VRAM del modelo base sin
 tocar el pipeline de RAG. La tabla antes/después y el presupuesto de pérdida
 aceptable están en `final/efficiency/`. Lo que se recorta en la versión reducida
 (p. ej. desactivar HyDE, que es una generación extra, o reducir el pool del

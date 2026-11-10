@@ -1,4 +1,4 @@
-# Reporte final — MacGyver Gym Rat
+# Reporte final: MacGyver Gym Rat
 
 > **Números en este reporte.** Todas las cifras concretas vienen de corridas ya
 > ejecutadas y comiteadas en `reports/*.csv` / `reports/*.json`, de `docs/*.md` o
@@ -196,7 +196,7 @@ ejercicio nombrado): 0.550 en la línea base, 1.000 en el sistema avanzado.
 Se reutilizan dos ablaciones ya medidas, más la de eficiencia que produce la
 corrida T4.
 
-**Ablación 1 — quitar una técnica de recuperación del RAG avanzado**
+**Ablación 1: quitar una técnica de recuperación del RAG avanzado**
 (`README.md` M3, `reports/scorecard_m3.csv`):
 
 | Sistema | Dim 1 | Dim 2 | Dim 3 | Ejercicio válido en contexto | Latencia p50 |
@@ -210,7 +210,7 @@ corrida T4.
 3 de 42.9% a 14.3%); el híbrido no mueve nada medible. HyDE cuesta ~+7.4 s porque
 es una generación completa extra.
 
-**Ablación 2 — quitar la técnica de eficiencia (int4 vs fp16).** La corrida T4
+**Ablación 2: quitar la técnica de eficiencia (int4 vs fp16).** La corrida T4
 mide el sistema avanzado con el generador fp16 ("antes") y con int4 ("después")
 sobre el mismo eval set y la misma máquina, y reporta cuántos puntos de dimensión
 3 se perdieron o ganaron, el pico de VRAM y la latencia p50/p95. La tabla
@@ -223,7 +223,7 @@ Todos los casos vienen de la lectura honesta de M2/M3 en el `README.md` y de
 `reports/replies_m3.json` / `reports/scorecard_m3_detail.json`. Agrupados por tipo,
 con qué pieza falló y qué se haría.
 
-**Tipo A — fallas de recuperación (el ejercicio válido nunca llega al contexto).**
+**Tipo A: fallas de recuperación (el ejercicio válido nunca llega al contexto).**
 
 1. **forearms** (dos botellas de agua llenas → clase `dumbbell`). Ninguna variante
    mete un ejercicio válido en el top 8 (0/8 bajo híbrido, rerank, HyDE, todas).
@@ -246,7 +246,7 @@ con qué pieza falló y qué se haría.
    un ejercicio real no realizable con el objeto. *Pieza:* recuperador + generación.
    *Arreglo:* filtro por clase de equipo.
 
-**Tipo B — fallas de generación (hay contexto válido y el modelo no lo usa).**
+**Tipo B: fallas de generación (hay contexto válido y el modelo no lo usa).**
 
 5. **biceps / triceps / pectorals** con contexto válido, el sistema avanzado
    **rechazó** los tres pese a tener un ejercicio válido en el contexto. *Pieza:* el
@@ -256,7 +256,7 @@ con qué pieza falló y qué se haría.
    sobre-rechaza (75% de answerables respondidos). *Arreglo:* saltar el paso de
    decisión cuando el top 8 ya tiene un ejercicio para ese músculo y clase de equipo.
 
-**Tipo C — adversariales no resueltos.**
+**Tipo C: adversariales no resueltos.**
 
 6. **adv03 (pregunta de dosificación de creatina/clenbuterol pegada a una de
    ejercicio).** Ningún sistema declinó la mitad de dosificación: la frase de la
@@ -270,7 +270,7 @@ con qué pieza falló y qué se haría.
    muestra "no safe option"), pero el agente debería no proponer un ejercicio para un
    objeto inseguro de entrada.
 
-**Transversal — el agente elige la clase de equipo equivocada.** En 7 de 9
+**Transversal: el agente elige la clase de equipo equivocada.** En 7 de 9
 llamadas pidió `body weight` (incluido forearms con botellas, que necesita
 `dumbbell`), así que la herramienta devolvió ejercicios que el usuario no puede
 hacer. *Pieza:* el agente. *Arreglo:* mapear el objeto a su clase sin el 1.7B. Es la
@@ -329,11 +329,11 @@ De la lectura honesta de M1/M2/M3:
 <!-- TODO: el equipo confirma la especificidad de cada línea; no se inventan
      contribuciones individuales. -->
 
-- **Juan Andrés Young Hoyos** — TODO: confirmar aporte (punto de contacto con el
+- **Juan Andrés Young Hoyos:** TODO: confirmar aporte (punto de contacto con el
   profesor; coordinación del repo y del submódulo del dataset).
-- **José Alejandro Jiménez Vásquez** — TODO: confirmar aporte.
-- **David Cuadros Mariño** — TODO: confirmar aporte.
-- **Alberto Daniel Cervantes Forero** — TODO: confirmar aporte.
+- **José Alejandro Jiménez Vásquez:** TODO: confirmar aporte.
+- **David Cuadros Mariño:** TODO: confirmar aporte.
+- **Alberto Daniel Cervantes Forero:** TODO: confirmar aporte.
 
 ## 10. Uso de IA
 
@@ -366,7 +366,7 @@ corrida T4).
 ## Sustentación
 
 Las diapositivas de la sustentación viven en `final/` o se enlazan desde aquí:
-TODO — pegar el enlace a las diapositivas (no se crean en esta entrega). La
+TODO: pegar el enlace a las diapositivas (no se crean en esta entrega). La
 sustentación es a más tardar el lunes 23 de noviembre, máximo 10 minutos, con tres
 casos en la demo en vivo (un acierto, un rechazo honesto y un adversarial).
 

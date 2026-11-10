@@ -1,4 +1,4 @@
-# Dependencias del Space (Módulo 5 — despliegue). Versiones EXACTAS (no rangos),
+# Dependencias del Space (Módulo 5, despliegue). Versiones EXACTAS (no rangos),
 # reproducibles en un Colab T4 gratuito y en Hugging Face Spaces (SDK=gradio).
 #
 # El stack de inferencia es el MISMO que m3/requirements.txt y

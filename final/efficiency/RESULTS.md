@@ -1,4 +1,4 @@
-# Resultados de eficiencia (Módulo 5) — int4 (nf4)
+# Resultados de eficiencia (Módulo 5): int4 (nf4)
 
 > **Estado: esqueleto.** Las celdas numéricas se llenan con la corrida en
 > **Colab T4** (`notebooks/M5_efficiency.ipynb`). No hay métricas inventadas:
@@ -9,7 +9,7 @@
 ## Presupuesto de pérdida aceptable (fijado ANTES de medir)
 
 Aceptamos perder hasta **5 puntos** de tasa de acierto de dominio (dimensión 3)
-en el sistema de **RAG avanzado** — bajar de **42.9 %** a no menos de **37.9 %** —
+en el sistema de **RAG avanzado** (bajar de **42.9 %** a no menos de **37.9 %**)
 siempre que int4:
 
 - reduzca el **pico de VRAM** por debajo de la huella fp16, y
@@ -23,7 +23,7 @@ siempre que int4:
 - Mismo harness congelado: `eval/harness.py` (3 dimensiones).
 - Misma máquina (Colab T4), seed 42, decodificación greedy.
 - Sistema medido: `sistema_rag_avanzado` (RAG avanzado) sobre cada generador.
-  Opcionalmente también `sistema_final` (agente) — ver detalle JSON.
+  Opcionalmente también `sistema_final` (agente), ver detalle JSON.
 - Latencia: por consulta, agregada con `numpy.percentile` (p50 y p95).
 - Memoria: `torch.cuda.max_memory_allocated` (pico VRAM) y huella de pesos.
 

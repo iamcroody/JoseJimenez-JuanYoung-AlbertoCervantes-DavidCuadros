@@ -1,4 +1,4 @@
-"""Módulo 5 — técnica de eficiencia: cargar el generador M1 en int4 (nf4).
+"""Módulo 5, técnica de eficiencia: cargar el generador M1 en int4 (nf4).
 
 El componente que domina la latencia del sistema es el generador Qwen3-1.7B con
 el adaptador LoRA de M1. La ablación de M3 lo deja claro: HyDE es una generación

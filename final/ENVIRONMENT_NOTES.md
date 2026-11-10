@@ -1,4 +1,4 @@
-# Notas de entorno — Módulo 5
+# Notas de entorno (Módulo 5)
 
 Estas notas registran las restricciones del entorno local (sandbox) donde se
 desarrolla el Módulo 5 y qué se pudo verificar aquí vs qué se difiere a Colab

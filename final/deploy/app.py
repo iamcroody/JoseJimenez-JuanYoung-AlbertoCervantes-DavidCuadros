@@ -80,7 +80,7 @@ DISCLAIMER = (
 
 
 # --------------------------------------------------------------------------
-# Filtro de satisfacción de restricciones (producción) — sección 7
+# Filtro de satisfacción de restricciones (producción), sección 7
 # --------------------------------------------------------------------------
 
 def passes_production_filter(reply, target, obj, catalog_index=None,
@@ -206,15 +206,16 @@ class SystemState:
         self.techniques = R.TECHNIQUES  # hybrid + rerank + hyde (avanzado)
 
         # Generador: int4 si QUANTIZED=1 (puede caber en hardware gratuito del
-        # Space), fp16 en caso contrario. Ambos exponen el mismo callable.
-        if self.quantized:
-            from efficiency import efficiency as E
+        # Space), fp16 en caso contrario. Ambas ramas reutilizan los atajos de
+        # final/efficiency/efficiency.py, así el generador desplegado y la fila
+        # medida en la tabla antes/después salen del MISMO código (una sola
+        # fuente de verdad, sin deriva entre el Space y la medición).
+        from efficiency import efficiency as E
 
+        if self.quantized:
             llm = E.load_int4_generator()
         else:
-            tok = mg.load_tokenizer()
-            model = mg.load_model(mg.BASE_MODEL, adapter=E_ADAPTER, four_bit=False)
-            llm = H.make_hf_system(model, tok)
+            llm = E.load_fp16_generator()
 
         # Índice denso + reranker (los deps pesados se importan dentro de rag.py).
         embedder_id = next(iter(R.EMBEDDING_CANDIDATES))
@@ -225,10 +226,6 @@ class SystemState:
         self.systems = S
         self.ready = True
         return self
-
-
-# El adaptador LoRA de M1, el mismo que usa efficiency.py y M3.
-E_ADAPTER = "models/r16-all-linear"
 
 
 # --------------------------------------------------------------------------
@@ -307,7 +304,7 @@ def build_interface(state=None, observer=None):
 
         return _json.dumps(health_mod.health_check(state), ensure_ascii=False, indent=2)
 
-    with gr.Blocks(title="MacGyver Gym Rat — M5") as demo:
+    with gr.Blocks(title="MacGyver Gym Rat (M5)") as demo:
         gr.Markdown("# MacGyver Gym Rat\n" + DISCLAIMER)
         with gr.Row():
             with gr.Column():

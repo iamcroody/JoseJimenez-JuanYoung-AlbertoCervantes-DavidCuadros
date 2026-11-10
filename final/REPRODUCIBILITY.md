@@ -1,4 +1,4 @@
-# Reproducibilidad — "otra persona clona y obtiene las mismas tablas"
+# Reproducibilidad: "otra persona clona y obtiene las mismas tablas"
 
 Este documento es el pegamento de reproducibilidad del proyecto: fija los ids y
 versiones de modelos, la semilla, el modo de decodificación y el **orden de
