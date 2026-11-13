@@ -65,7 +65,7 @@ iniciar sesión); una petición son segundos.
 
 Cómo usa la GPU (`app.py`): el generador se carga en `cuda` al arrancar, fuera de
 `@spaces.GPU`, como pide ZeroGPU. La GPU solo se pide dentro de `run_advanced`
-(`@spaces.GPU(duration=60)`), que corre el RAG avanzado de M3. Dos cosas que
+(`@spaces.GPU(duration=30)`), que corre el RAG avanzado de M3. Dos cosas que
 encontramos al probar el Space, y que el código ya resuelve:
 
 - **Nada de cálculo de torch en el proceso principal.** Codificar los 1324

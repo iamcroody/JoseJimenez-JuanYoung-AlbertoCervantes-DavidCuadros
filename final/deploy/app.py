@@ -75,10 +75,14 @@ DATASET_DIR = ROOT / "data" / "exercises-dataset"
 # ZeroGPU define esta variable en el Space. Decide dónde van los modelos.
 ON_ZEROGPU = bool(os.environ.get("SPACES_ZERO_GPU"))
 
-# Tope de GPU por petición en ZeroGPU. El RAG avanzado son dos generaciones
-# (borrador de HyDE + respuesta): mediana 15.2 s y máximo 31.6 s en un T4
-# (reports/latency_m3.csv). 60 s deja margen sin castigar la prioridad en la cola.
-GPU_SECONDS = 60
+# Tope de GPU por petición en ZeroGPU. ZeroGPU compara lo que la petición
+# RESERVA (este tope, más un margen suyo) con la cuota diaria que le queda a
+# quien usa la demo, no lo que de verdad usa: con 60 s una cuenta gratuita
+# (5 min al día) pedía 90 s y se quedaba sin cuota tras pocas peticiones. El
+# RAG avanzado son dos generaciones (borrador de HyDE + respuesta): mediana
+# 15.2 s y máximo 31.6 s en un T4 (reports/latency_m3.csv), y la GPU de ZeroGPU
+# es varias veces más rápida.
+GPU_SECONDS = 30
 
 # El objeto casero por defecto en la UI. La app pide el objeto como frase libre
 # del catálogo de equivalencias (macgyver.OBJECT_MAP) para poder mapearlo a su
