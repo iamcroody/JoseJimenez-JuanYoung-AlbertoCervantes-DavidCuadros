@@ -208,14 +208,20 @@ def load_zerogpu_generator(adapter):
     arrancar un Space de ZeroGPU todavía no hay una GPU real a la cual
     preguntarle. bf16 porque la GPU de ZeroGPU (RTX Pro 6000, Blackwell) lo tiene
     en hardware; en el T4 de las mediciones fue fp16, y el reporte lo dice.
+
+    Sin `set_seed` ni `torch.set_grad_enabled` aquí: en el proceso principal de
+    ZeroGPU, una llamada de CUDA que la emulación no intercepta deja a los
+    workers sin GPU ("No CUDA GPUs are available" en `worker_init`), y
+    `set_seed` llama a `torch.cuda.manual_seed_all`. No cambia ninguna
+    respuesta: la decodificación es greedy (sin muestreo) y
+    `harness.make_hf_system` ya genera bajo `torch.no_grad()`.
     """
     import torch
     from peft import PeftModel
-    from transformers import AutoModelForCausalLM, set_seed
+    from transformers import AutoModelForCausalLM
 
     from efficiency import efficiency as E
 
-    set_seed(H.SEED)
     tok = mg.load_tokenizer()
     model = AutoModelForCausalLM.from_pretrained(mg.BASE_MODEL, dtype=torch.bfloat16)
     # torch_device="cpu": al arrancar, ZeroGPU hace que torch.cuda.is_available()
@@ -224,7 +230,6 @@ def load_zerogpu_generator(adapter):
     # en CPU y solo el modelo ya fusionado se pone en cuda.
     model = PeftModel.from_pretrained(model, adapter, torch_device="cpu").merge_and_unload()
     model = model.to("cuda").eval()
-    torch.set_grad_enabled(False)
     return E.make_generator(model, tok)
 
 
@@ -255,7 +260,9 @@ class SystemState:
         import rag as R
         from transformers import set_seed
 
-        set_seed(H.SEED)
+        # En ZeroGPU no se fija la semilla (ver `load_zerogpu_generator`).
+        if not ON_ZEROGPU:
+            set_seed(H.SEED)
 
         self.docs = C.build_documents()
         self.catalog_index = mg.build_name_index(H.reachable_catalog())
