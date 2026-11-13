@@ -1,6 +1,5 @@
 ---
 title: MacGyver Gym Rat
-emoji: 🏋️
 colorFrom: green
 colorTo: gray
 sdk: gradio

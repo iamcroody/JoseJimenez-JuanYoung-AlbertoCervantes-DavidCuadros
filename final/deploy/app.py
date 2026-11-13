@@ -97,7 +97,7 @@ VALVE_MESSAGE = (
 # PDF para dominios sensibles; aquí el dominio es salud/ejercicio). Las imágenes
 # provienen del CATÁLOGO, no son generadas: se marca explícitamente.
 DISCLAIMER = (
-    "⚠️ Esta herramienta **sugiere**; la decisión es tuya y no sustituye a un "
+    "Esta herramienta **sugiere**; la decisión es tuya y no sustituye a un "
     "entrenador ni a un profesional de la salud. Cubre solo 4 clases de equipo "
     "(dumbbell, kettlebell, weighted, body weight). La imagen/GIF proviene del "
     "catálogo de ejercicios (NO es generada por IA)."
