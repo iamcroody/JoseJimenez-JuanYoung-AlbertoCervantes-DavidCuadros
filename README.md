@@ -922,7 +922,13 @@ discarded alternatives (int8, distillation, a smaller-model LoRA).
 ### Deployment: public Gradio Space
 
 A Gradio app ([`final/deploy/`](final/deploy/README.md)) runs the MacGyver Gym Rat system end
-to end and adds the production pieces the rubric asks for:
+to end. Free Hugging Face accounts can no longer create CPU Gradio Spaces, so, as the
+professor allowed, it runs on a **ZeroGPU Space**, where a GPU is lent only while a request
+runs. The backup is the same `app.py` on a Colab T4 or a laptop with a public Gradio link
+(`SHARE=1`). The Space serves the M3 advanced RAG with the generator in bf16; the int4
+technique is measured on the T4 and can be shown live on the backup (`QUANTIZED=1`). The
+deploy README says exactly what runs where. The app adds the production pieces the rubric
+asks for:
 
 - **Visual component.** Shows the catalog image/GIF of the recommended exercise (not an
   AI-generated image), satisfying the M4 visual requirement. The UI makes clear the system
@@ -933,7 +939,8 @@ to end and adds the production pieces the rubric asks for:
   duplicated). If it does not pass, the app shows a "no safe option" message instead of an
   unverified recommendation.
 - **Health check.** `health_check(state)` reports liveness (generator and embedder loaded,
-  Chroma index responds) with no real query.
+  Chroma index responds) with no real query. It is a button in the UI and the `health`
+  API endpoint, callable with `curl` (command in the deploy README).
 - **JSON logging, no PII.** One JSON Lines record per request: timestamp, latency, which
   components ran (rag/rerank/hyde/tool/vision), whether the valve fired, whether the filter
   passed. Only the muscle (catalog vocabulary) and the object's equipment *class* are logged,
