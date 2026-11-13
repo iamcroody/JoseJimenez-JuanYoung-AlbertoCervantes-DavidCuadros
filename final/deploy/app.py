@@ -233,6 +233,50 @@ def load_zerogpu_generator(adapter):
     return E.make_generator(model, tok)
 
 
+def build_zerogpu_retriever(docs):
+    """El retriever de M3 para ZeroGPU, con los embeddings calculados aparte.
+
+    Construir `R.DenseIndex` codifica los 1324 documentos con torch en el
+    proceso principal, y en ZeroGPU eso deja a los workers sin GPU (ver
+    `embed_docs.py`, con la medición). Aquí `embed_docs.py` corre en un proceso
+    hijo y este proceso solo carga la matriz en Chroma. El índice, la búsqueda
+    y el top 8 son los mismos; el encoder (para la consulta del usuario, que se
+    codifica dentro de `run_advanced`) y el reranker quedan en CPU.
+    """
+    import subprocess
+    import tempfile
+
+    import chromadb
+    import numpy as np
+    import rag as R
+    from sentence_transformers import SentenceTransformer
+
+    from efficiency import efficiency as E
+
+    out = Path(tempfile.mkdtemp()) / "doc_embeddings.npy"
+    subprocess.run([sys.executable, str(Path(__file__).with_name("embed_docs.py")), str(out)],
+                   check=True)
+    embeddings = np.load(out)
+
+    # Lo mismo que hace `R.DenseIndex.__init__`, salvo calcular los embeddings.
+    dense = R.DenseIndex.__new__(R.DenseIndex)
+    dense.model_id = E.EMBED_MODEL
+    dense.query_prefix = R.EMBEDDING_CANDIDATES[E.EMBED_MODEL]["query_prefix"]
+    dense.encoder = SentenceTransformer(E.EMBED_MODEL, device="cpu")
+    dense.collection = chromadb.Client().create_collection(
+        "macgyver_docs", metadata={"hnsw:space": "cosine"})
+    for start in range(0, len(docs), 500):
+        batch = docs[start:start + 500]
+        dense.collection.add(
+            ids=[d["id"] for d in batch],
+            documents=[d["text"] for d in batch],
+            metadatas=[{"target": d["target"], "equipment": d["equipment"]} for d in batch],
+            embeddings=embeddings[start:start + 500].tolist(),
+        )
+    return R.Retriever(docs, dense, reranker=R.load_reranker(device="cpu"),
+                       k=E.TOP_K, pool=E.POOL)
+
+
 # --------------------------------------------------------------------------
 # Estado del sistema (modelos + índice)
 # --------------------------------------------------------------------------
@@ -286,9 +330,12 @@ class SystemState:
             llm = E.load_fp16_generator(adapter=adapter)
 
         # El mismo retriever que midió M3 (bge-small, rerank sobre 20, top 8).
-        # En ZeroGPU va en CPU: construir el índice calcula embeddings y fuera
-        # de @spaces.GPU no hay GPU real.
-        self.retriever = E.build_retriever(self.docs, device="cpu" if ON_ZEROGPU else None)
+        # En ZeroGPU los embeddings de los documentos se calculan en otro
+        # proceso (ver `build_zerogpu_retriever`).
+        if ON_ZEROGPU:
+            self.retriever = build_zerogpu_retriever(self.docs)
+        else:
+            self.retriever = E.build_retriever(self.docs)
         S.bind(self.retriever, llm, self.docs, techniques=self.techniques)
         self.systems = S
         self.ready = True
