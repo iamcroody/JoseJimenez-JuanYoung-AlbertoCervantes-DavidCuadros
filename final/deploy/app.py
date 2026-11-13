@@ -218,7 +218,11 @@ def load_zerogpu_generator(adapter):
     set_seed(H.SEED)
     tok = mg.load_tokenizer()
     model = AutoModelForCausalLM.from_pretrained(mg.BASE_MODEL, dtype=torch.bfloat16)
-    model = PeftModel.from_pretrained(model, adapter).merge_and_unload()
+    # torch_device="cpu": al arrancar, ZeroGPU hace que torch.cuda.is_available()
+    # diga True, y PEFT intentaría leer los pesos del adaptador directo a cuda,
+    # donde todavía no hay GPU real ("No CUDA GPUs are available"). Se fusiona
+    # en CPU y solo el modelo ya fusionado se pone en cuda.
+    model = PeftModel.from_pretrained(model, adapter, torch_device="cpu").merge_and_unload()
     model = model.to("cuda").eval()
     torch.set_grad_enabled(False)
     return E.make_generator(model, tok)
