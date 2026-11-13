@@ -452,6 +452,11 @@ def handle_request(state, observer, target, obj, run=None):
 # La UI de Gradio (import perezoso de gradio)
 # --------------------------------------------------------------------------
 
+def catalog_muscles():
+    """Los músculos del catálogo alcanzable, con la grafía que usa el filtro."""
+    return sorted({record["target"] for record in H.reachable_catalog()})
+
+
 def health_json(state):
     """El health check como texto JSON, para la UI y para la API `/health`."""
     import json
@@ -485,8 +490,12 @@ def build_interface(state=None, observer=None, run=None):
         gr.Markdown("# MacGyver Gym Rat\n" + DISCLAIMER)
         with gr.Row():
             with gr.Column():
-                target = gr.Textbox(label="Músculo objetivo (p. ej. biceps, lats)",
-                                    value="biceps")
+                # Lista cerrada con el vocabulario del catálogo: el filtro de
+                # producción compara el músculo pedido con el del ejercicio, y
+                # con texto libre "tricep" (el catálogo dice "triceps") rechazaba
+                # una respuesta correcta. Lo vimos en el Space.
+                target = gr.Dropdown(label="Músculo objetivo",
+                                     choices=catalog_muscles(), value="biceps")
                 obj = gr.Dropdown(label="Objeto casero disponible",
                                   choices=DEFAULT_OBJECTS,
                                   value=DEFAULT_OBJECTS[0], allow_custom_value=True)

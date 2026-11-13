@@ -312,6 +312,12 @@ def main():
     check("health_json is valid JSON and reports 'down' before loading",
           health["status"] == "down", health["status"])
 
+    print("muscle choices come from the catalog")
+    muscles = app.catalog_muscles()
+    check("the muscle list uses the catalog's spelling",
+          "triceps" in muscles and "tricep" not in muscles and len(muscles) == 19,
+          len(muscles))
+
     print("health on the ZeroGPU index (no compute in the main process)")
 
     class CountingDense:
