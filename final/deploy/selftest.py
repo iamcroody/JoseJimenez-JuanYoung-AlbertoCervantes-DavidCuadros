@@ -260,6 +260,58 @@ def main():
               and observer.component_counts["vision"] == 1, observer.component_counts)
         observer.finish()  # no-op seguro cuando está deshabilitado
 
+    print("ZeroGPU wiring and the M3 retriever settings")
+    check("without the spaces package the GPU decorator is a no-op",
+          app.spaces is None and app.run_advanced.__name__ == "run_advanced")
+    check("final/ is on sys.path so the efficiency module imports",
+          str(app.ROOT / "final") in sys.path)
+    from efficiency import efficiency as E
+    check("the app serves the retriever M3 measured (bge-small, top 8, pool 20)",
+          (E.EMBED_MODEL, E.TOP_K, E.POOL) == ("BAAI/bge-small-en-v1.5", 8, 20),
+          (E.EMBED_MODEL, E.TOP_K, E.POOL))
+
+    print("handle_request end to end with a fake system")
+
+    class FakeSystems:
+        @staticmethod
+        def sistema_rag_avanzado(prompt):
+            raise AssertionError("the injected run should be used, not this one")
+
+    class ServingState:
+        ready = True
+        techniques = ("hybrid", "rerank", "hyde")
+        systems = FakeSystems()
+        catalog_index = index
+        full_index = index
+
+    with mock.patch.dict("os.environ", {}, clear=True):
+        import wandb_utils as W
+
+        serving_observer = W.init_observer(project="test-proj")
+    seen = []
+
+    def fake_run(prompt):
+        seen.append(prompt)
+        return answer_reply
+
+    text, _media = app.handle_request(ServingState(), serving_observer, "biceps", obj,
+                                      run=fake_run)
+    check("handle_request sends the M1 prompt to the injected run",
+          seen == [mg.build_prompt("biceps", obj)])
+    check("a verified answer is shown as the model wrote it", text == answer_reply)
+
+    text_inv, media_inv = app.handle_request(ServingState(), serving_observer, "biceps",
+                                             obj, run=lambda prompt: invented)
+    check("an unverified answer is replaced by the valve message, with no image",
+          text_inv == app.VALVE_MESSAGE and media_inv is None)
+
+    print("health as JSON for the /health API endpoint")
+    import json
+
+    health = json.loads(app.health_json(NotReady()))
+    check("health_json is valid JSON and reports 'down' before loading",
+          health["status"] == "down", health["status"])
+
     print("\nself-test", "PASSED" if not FAILURES else f"FAILED: {FAILURES}")
     if FAILURES:
         raise SystemExit(1)
