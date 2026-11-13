@@ -1,0 +1,18 @@
+# Dependencias del Space de ZeroGPU. gradio y spaces los pone Hugging Face
+# (sdk_version en README.md).
+#
+# torch 2.13.0: está en la lista de versiones que soporta ZeroGPU y es la que
+# fija uv.lock. El resto es el stack de m3/requirements.txt, el que registró la
+# corrida de M3 (reports/scorecard_m3_detail.json). bitsandbytes no va: el
+# Space carga el generador en bf16 (ver final/deploy/README.md).
+torch==2.13.0
+transformers==5.16.1
+peft==0.20.0
+sentence-transformers==6.0.1
+chromadb==1.5.5
+rouge_score==0.1.2
+opentelemetry-api==1.42.1
+opentelemetry-sdk==1.42.1
+# 0.28.0 y no la última: desde 0.29.0 wandb exige opentelemetry >= 1.43, y el
+# stack de M3 fija 1.42.1 (chromadb). Con 0.31.0 pip no encuentra solución.
+wandb==0.28.0
