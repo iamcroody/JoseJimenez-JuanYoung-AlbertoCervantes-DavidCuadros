@@ -29,9 +29,9 @@ Determinismo: seed 42 y decodificación greedy, los mismos de M1/M2/M3 (los fija
 Dónde corre (el mismo archivo en los tres casos):
   - Space con ZeroGPU: `SPACES_ZERO_GPU` está definida. El generador se carga en
     `cuda` al arrancar (fuera de `@spaces.GPU`, como pide ZeroGPU) y la GPU solo
-    se pide dentro de `run_advanced`. El índice y el reranker van en CPU porque
-    construir el índice calcula embeddings, y fuera de `@spaces.GPU` no hay GPU
-    real para calcular.
+    se pide dentro de `run_advanced`. El encoder de consultas y el reranker
+    también van en `cuda`; los embeddings del catálogo se calculan en un proceso
+    hijo (`embed_docs.py`). Ver `build_zerogpu_retriever`.
   - Colab o un computador con GPU: `SHARE=1` imprime un enlace público de Gradio.
     `QUANTIZED=1` carga el generador int4 (la técnica de eficiencia medida).
   - Sin el paquete `spaces`, `@spaces.GPU` se reemplaza por un decorador que no
@@ -240,8 +240,13 @@ def build_zerogpu_retriever(docs):
     proceso principal, y en ZeroGPU eso deja a los workers sin GPU (ver
     `embed_docs.py`, con la medición). Aquí `embed_docs.py` corre en un proceso
     hijo y este proceso solo carga la matriz en Chroma. El índice, la búsqueda
-    y el top 8 son los mismos; el encoder (para la consulta del usuario, que se
-    codifica dentro de `run_advanced`) y el reranker quedan en CPU.
+    y el top 8 son los mismos.
+
+    El encoder (para la consulta del usuario) y el reranker van en `cuda`, como
+    el generador. Con ellos en CPU la petición se quedaba colgada: el worker de
+    ZeroGPU es un fork de este proceso, que ya usó el pool de hilos de CPU de
+    torch (al fusionar el adaptador), y ese pool no sobrevive a un fork. En
+    `cuda` todo lo que calcula `run_advanced` corre en la GPU.
     """
     import subprocess
     import tempfile
@@ -262,7 +267,7 @@ def build_zerogpu_retriever(docs):
     dense = R.DenseIndex.__new__(R.DenseIndex)
     dense.model_id = E.EMBED_MODEL
     dense.query_prefix = R.EMBEDDING_CANDIDATES[E.EMBED_MODEL]["query_prefix"]
-    dense.encoder = SentenceTransformer(E.EMBED_MODEL, device="cpu")
+    dense.encoder = SentenceTransformer(E.EMBED_MODEL, device="cuda")
     dense.collection = chromadb.Client().create_collection(
         "macgyver_docs", metadata={"hnsw:space": "cosine"})
     for start in range(0, len(docs), 500):
@@ -273,7 +278,7 @@ def build_zerogpu_retriever(docs):
             metadatas=[{"target": d["target"], "equipment": d["equipment"]} for d in batch],
             embeddings=embeddings[start:start + 500].tolist(),
         )
-    return R.Retriever(docs, dense, reranker=R.load_reranker(device="cpu"),
+    return R.Retriever(docs, dense, reranker=R.load_reranker(device="cuda"),
                        k=E.TOP_K, pool=E.POOL)
 
 

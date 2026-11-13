@@ -64,9 +64,21 @@ iniciar sesión); una petición son segundos.
 
 Cómo usa la GPU (`app.py`): el generador se carga en `cuda` al arrancar, fuera de
 `@spaces.GPU`, como pide ZeroGPU. La GPU solo se pide dentro de `run_advanced`
-(`@spaces.GPU(duration=60)`), que corre el RAG avanzado de M3. El índice denso y
-el reranker van en CPU, porque construir el índice calcula embeddings y fuera de
-`@spaces.GPU` no hay GPU real; son modelos pequeños y en CPU tardan poco.
+(`@spaces.GPU(duration=60)`), que corre el RAG avanzado de M3. Dos cosas que
+encontramos al probar el Space, y que el código ya resuelve:
+
+- **Nada de cálculo de torch en el proceso principal.** Codificar los 1324
+  documentos del catálogo ahí dejaba a todos los workers sin GPU ("No CUDA GPUs
+  are available" en `worker_init`). En ZeroGPU esos embeddings se calculan en un
+  proceso hijo (`embed_docs.py`) y la app solo los carga en Chroma. Los vectores
+  son idénticos bit a bit a los del proceso principal.
+- **Nada de cálculo en CPU dentro del worker.** El worker es un fork del proceso
+  principal, y el pool de hilos de CPU de torch no sobrevive al fork: la
+  petición se quedaba colgada. El encoder de consultas y el reranker van en
+  `cuda`, como el generador.
+
+Tampoco se llama a `set_seed` en ZeroGPU: la decodificación es greedy, así que la
+semilla no cambia ninguna respuesta.
 
 ### Respaldo: Colab o un computador con enlace público
 
@@ -91,7 +103,8 @@ túnel como `cloudflared tunnel --url http://localhost:7860` también la publica
 | --- | --- | --- |
 | Sistema | RAG avanzado de M3 (HyDE + híbrido + rerank), bge-small, top 8, pool 20 | el mismo |
 | Generador | Qwen3-1.7B + LoRA de M1, fusionado, **bf16** | fp16, o **int4** con `QUANTIZED=1` |
-| Índice y reranker | CPU | GPU |
+| Encoder de consultas y reranker | GPU | GPU |
+| Embeddings del catálogo | proceso hijo, CPU | proceso principal, GPU |
 
 El retriever sale de `final/efficiency/efficiency.py::build_retriever`, el mismo
 que usa la fila "antes" de `notebooks/M5_efficiency.ipynb`, con las decisiones de
