@@ -25,6 +25,17 @@ sin esas dependencias. El filtro de producción y la resolución de imagen son p
 
 Determinismo: seed 42 y decodificación greedy, los mismos de M1/M2/M3 (los fija
 `harness.make_hf_system`, que usan tanto M3 como el generador int4).
+
+Dónde corre (el mismo archivo en los tres casos):
+  - Space con ZeroGPU: `SPACES_ZERO_GPU` está definida. El generador se carga en
+    `cuda` al arrancar (fuera de `@spaces.GPU`, como pide ZeroGPU) y la GPU solo
+    se pide dentro de `run_advanced`. El índice y el reranker van en CPU porque
+    construir el índice calcula embeddings, y fuera de `@spaces.GPU` no hay GPU
+    real para calcular.
+  - Colab o un computador con GPU: `SHARE=1` imprime un enlace público de Gradio.
+    `QUANTIZED=1` carga el generador int4 (la técnica de eficiencia medida).
+  - Sin el paquete `spaces`, `@spaces.GPU` se reemplaza por un decorador que no
+    hace nada, así que el self-test y Colab importan este archivo sin cambios.
 """
 
 import os
@@ -32,9 +43,15 @@ import sys
 import time
 from pathlib import Path
 
+try:
+    import spaces
+except ImportError:  # Colab, local y el self-test: el decorador no hace nada.
+    spaces = None
+
 # ROOT = raíz del repo (…/JoseJimenez-...). final/deploy/app.py -> parents[2].
 ROOT = Path(__file__).resolve().parents[2]
-for _sub in ("scripts", "eval", "m3"):
+# `final/` va en sys.path para que `from efficiency import efficiency` resuelva.
+for _sub in ("scripts", "eval", "m3", "final"):
     _path = str(ROOT / _sub)
     if _path not in sys.path:
         sys.path.insert(0, _path)
@@ -54,6 +71,14 @@ import logging_utils as L  # noqa: E402
 # data/exercises-dataset/{images,videos}/<id>-<media_id>.{jpg,gif} y cada record
 # del catálogo ya trae las rutas relativas en `image` y `gif_url`.
 DATASET_DIR = ROOT / "data" / "exercises-dataset"
+
+# ZeroGPU define esta variable en el Space. Decide dónde van los modelos.
+ON_ZEROGPU = bool(os.environ.get("SPACES_ZERO_GPU"))
+
+# Tope de GPU por petición en ZeroGPU. El RAG avanzado son dos generaciones
+# (borrador de HyDE + respuesta): mediana 15.2 s y máximo 31.6 s en un T4
+# (reports/latency_m3.csv). 60 s deja margen sin castigar la prioridad en la cola.
+GPU_SECONDS = 60
 
 # El objeto casero por defecto en la UI. La app pide el objeto como frase libre
 # del catálogo de equivalencias (macgyver.OBJECT_MAP) para poder mapearlo a su
@@ -172,7 +197,35 @@ def valve_fired(reply):
 
 
 # --------------------------------------------------------------------------
-# Estado del sistema (modelos + índice), cargado perezosamente
+# Generador para ZeroGPU
+# --------------------------------------------------------------------------
+
+def load_zerogpu_generator(adapter):
+    """El generador M1 (Qwen3-1.7B + LoRA fusionado) en bf16, puesto en `cuda`.
+
+    Es la misma carga que `mg.load_model` sin cuantizar, con el dispositivo y el
+    dtype fijos. `mg.pick_device_dtype` pregunta la capacidad de la GPU, y al
+    arrancar un Space de ZeroGPU todavía no hay una GPU real a la cual
+    preguntarle. bf16 porque la GPU de ZeroGPU (RTX Pro 6000, Blackwell) lo tiene
+    en hardware; en el T4 de las mediciones fue fp16, y el reporte lo dice.
+    """
+    import torch
+    from peft import PeftModel
+    from transformers import AutoModelForCausalLM, set_seed
+
+    from efficiency import efficiency as E
+
+    set_seed(H.SEED)
+    tok = mg.load_tokenizer()
+    model = AutoModelForCausalLM.from_pretrained(mg.BASE_MODEL, dtype=torch.bfloat16)
+    model = PeftModel.from_pretrained(model, adapter).merge_and_unload()
+    model = model.to("cuda").eval()
+    torch.set_grad_enabled(False)
+    return E.make_generator(model, tok)
+
+
+# --------------------------------------------------------------------------
+# Estado del sistema (modelos + índice)
 # --------------------------------------------------------------------------
 
 class SystemState:
@@ -205,23 +258,26 @@ class SystemState:
         self.full_index = mg.build_name_index(mg.load_catalog())
         self.techniques = R.TECHNIQUES  # hybrid + rerank + hyde (avanzado)
 
-        # Generador: int4 si QUANTIZED=1 (puede caber en hardware gratuito del
-        # Space), fp16 en caso contrario. Ambas ramas reutilizan los atajos de
-        # final/efficiency/efficiency.py, así el generador desplegado y la fila
-        # medida en la tabla antes/después salen del MISMO código (una sola
-        # fuente de verdad, sin deriva entre el Space y la medición).
+        # Generador: int4 si QUANTIZED=1, fp16 en caso contrario. Ambas ramas
+        # reutilizan los atajos de final/efficiency/efficiency.py, así el
+        # generador desplegado y la fila medida en la tabla antes/después salen
+        # del MISMO código. En ZeroGPU va su propia carga (ver
+        # `load_zerogpu_generator`). La ruta del adaptador es absoluta porque en
+        # el Space el directorio de trabajo no es la raíz del repo.
         from efficiency import efficiency as E
 
+        adapter = str(ROOT / E.ADAPTER)
         if self.quantized:
-            llm = E.load_int4_generator()
+            llm = E.load_int4_generator(adapter=adapter)
+        elif ON_ZEROGPU:
+            llm = load_zerogpu_generator(adapter)
         else:
-            llm = E.load_fp16_generator()
+            llm = E.load_fp16_generator(adapter=adapter)
 
-        # Índice denso + reranker (los deps pesados se importan dentro de rag.py).
-        embedder_id = next(iter(R.EMBEDDING_CANDIDATES))
-        dense = R.DenseIndex(self.docs, embedder_id)
-        reranker = R.load_reranker()
-        self.retriever = R.Retriever(self.docs, dense, reranker=reranker)
+        # El mismo retriever que midió M3 (bge-small, rerank sobre 20, top 8).
+        # En ZeroGPU va en CPU: construir el índice calcula embeddings y fuera
+        # de @spaces.GPU no hay GPU real.
+        self.retriever = E.build_retriever(self.docs, device="cpu" if ON_ZEROGPU else None)
         S.bind(self.retriever, llm, self.docs, techniques=self.techniques)
         self.systems = S
         self.ready = True
@@ -229,20 +285,48 @@ class SystemState:
 
 
 # --------------------------------------------------------------------------
+# La parte que usa la GPU
+# --------------------------------------------------------------------------
+
+# El estado que sirve la app. Lo asigna `main()` al arrancar; `run_advanced` lo
+# lee desde aquí porque ZeroGPU ejecuta la función decorada en otro proceso, que
+# hereda las variables globales pero no los argumentos que no se pueden copiar.
+STATE = None
+
+
+def _gpu(fn):
+    """`@spaces.GPU(duration=GPU_SECONDS)` en un Space; sin `spaces`, nada."""
+    if spaces is None:
+        return fn
+    return spaces.GPU(duration=GPU_SECONDS)(fn)
+
+
+@_gpu
+def run_advanced(prompt):
+    """El RAG avanzado de M3 (HyDE + híbrido + rerank + generación) sobre STATE.
+
+    Es lo único que necesita GPU: el borrador de HyDE y la respuesta final son
+    dos generaciones. En ZeroGPU la GPU se asigna al entrar y se libera al salir.
+    """
+    return STATE.systems.sistema_rag_avanzado(prompt)
+
+
+# --------------------------------------------------------------------------
 # El manejador de una petición (texto + imagen + log + observabilidad)
 # --------------------------------------------------------------------------
 
-def handle_request(state, observer, target, obj):
+def handle_request(state, observer, target, obj, run=None):
     """Procesa una petición de punta a punta y devuelve (texto, ruta_media).
 
     Pasos: construir el prompt (misma definición que M1/M2/M3), correr el sistema
     avanzado, aplicar el FILTRO de producción, resolver la imagen si procede,
-    registrar el log JSON sin PII y la observabilidad W&B.
+    registrar el log JSON sin PII y la observabilidad W&B. `run` es quien genera
+    la respuesta; por defecto, el sistema avanzado de `state` sin decorar.
     """
     start = time.perf_counter()
     prompt = mg.build_prompt(target, obj)
 
-    reply = state.systems.sistema_rag_avanzado(prompt)
+    reply = (run or state.systems.sistema_rag_avanzado)(prompt)
 
     refused = valve_fired(reply)
     passed, _detail = passes_production_filter(
@@ -280,29 +364,34 @@ def handle_request(state, observer, target, obj):
 # La UI de Gradio (import perezoso de gradio)
 # --------------------------------------------------------------------------
 
-def build_interface(state=None, observer=None):
-    """Construye los Blocks de Gradio. Importa gradio aquí, no al cargar el módulo."""
-    import gradio as gr
+def health_json(state):
+    """El health check como texto JSON, para la UI y para la API `/health`."""
+    import json
 
     import health as health_mod
+
+    return json.dumps(health_mod.health_check(state), ensure_ascii=False, indent=2)
+
+
+def build_interface(state=None, observer=None, run=None):
+    """Construye los Blocks de Gradio. Importa gradio aquí, no al cargar el módulo.
+
+    El estado ya viene cargado (`main()` lo carga al arrancar). Cargar en el
+    primer clic hacía que esa petición tardara minutos, y ZeroGPU necesita los
+    modelos en `cuda` antes de la primera llamada a `@spaces.GPU`.
+    """
+    import gradio as gr
+
     import wandb_utils as W
 
     state = state or SystemState()
     observer = observer or W.init_observer()
 
-    def _ensure_loaded():
-        if not state.ready:
-            state.load()
-
     def on_submit(target, obj):
-        _ensure_loaded()
-        text, media = handle_request(state, observer, target, obj)
-        return text, media
+        return handle_request(state, observer, target, obj, run=run)
 
     def on_health():
-        import json as _json
-
-        return _json.dumps(health_mod.health_check(state), ensure_ascii=False, indent=2)
+        return health_json(state)
 
     with gr.Blocks(title="MacGyver Gym Rat (M5)") as demo:
         gr.Markdown("# MacGyver Gym Rat\n" + DISCLAIMER)
@@ -320,16 +409,30 @@ def build_interface(state=None, observer=None):
         with gr.Accordion("Health check (liveness, sin consulta real)", open=False):
             health_btn = gr.Button("Ver estado")
             health_out = gr.Code(label="/health", language="json")
-            health_btn.click(on_health, inputs=None, outputs=health_out)
+            # api_name="health" lo publica en la API de Gradio: se llama sin
+            # abrir la página (ver final/deploy/README.md, "Health check").
+            health_btn.click(on_health, inputs=None, outputs=health_out,
+                             api_name="health")
 
-        submit.click(on_submit, inputs=[target, obj], outputs=[out_text, out_media])
+        submit.click(on_submit, inputs=[target, obj], outputs=[out_text, out_media],
+                     api_name="recommend")
 
     return demo, state, observer
 
 
 def main():  # pragma: no cover - solo en el Space/Colab con deps completas
-    demo, _state, _observer = build_interface()
-    demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
+    global STATE
+
+    # Cargar ANTES de lanzar: en ZeroGPU es obligatorio y en Colab evita que la
+    # primera petición de la sustentación pague la carga.
+    STATE = SystemState().load()
+    demo, _state, _observer = build_interface(STATE, run=run_advanced)
+    # En el Space, Gradio elige host y puerto. En Colab o un computador,
+    # SHARE=1 imprime un enlace público https://xxxx.gradio.live.
+    share = os.environ.get("SHARE", "0") == "1"
+    # `allowed_paths` deja que Gradio sirva los GIF del catálogo, que viven fuera
+    # del directorio de trabajo cuando el repo se clona dentro del Space.
+    demo.launch(share=share, allowed_paths=[str(DATASET_DIR)])
 
 
 if __name__ == "__main__":  # pragma: no cover
