@@ -76,6 +76,15 @@ def _check_index(state):
     try:
         retriever = state.retriever
         dense = retriever.dense
+        # En ZeroGPU el índice no es Chroma (ver `app.GpuDenseIndex`) y en el
+        # proceso principal no se puede calcular nada: basta con que tenga
+        # vectores.
+        counter = getattr(dense, "count", None)
+        if callable(counter):
+            n = counter()
+            if n <= 0:
+                raise RuntimeError("the index holds no vectors")
+            return True, f"gpu index holds {n} vectors"
         collection = dense.collection
         # Tamaño del vector: el que el embedder produce. Lo tomamos del propio
         # encoder si expone dimensión; si no, probamos con count()>0 como ping.

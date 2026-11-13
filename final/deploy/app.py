@@ -233,51 +233,72 @@ def load_zerogpu_generator(adapter):
     return E.make_generator(model, tok)
 
 
+class GpuDenseIndex:
+    """Búsqueda densa exacta en la GPU, para el Space de ZeroGPU.
+
+    Hace lo mismo que `R.DenseIndex.search` (similitud coseno entre la consulta y
+    los 1324 documentos, con los mismos vectores normalizados de bge-small) como
+    un producto de matrices en `cuda`, en vez de consultar Chroma. Chroma 1.x
+    corre sobre un pool de hilos de Rust que no existe en el worker de ZeroGPU,
+    que es un fork del proceso principal: la primera consulta dentro del worker
+    se quedaba esperando para siempre. El HNSW de Chroma aproxima justo esta
+    búsqueda exacta, así que el resultado solo cambia en el ruido que ya
+    reportó M3 (dos construcciones del índice de Chroma tampoco coinciden
+    siempre).
+    """
+
+    def __init__(self, docs, embeddings, model_id, query_prefix):
+        import torch
+        from sentence_transformers import SentenceTransformer
+
+        self.model_id = model_id
+        self.query_prefix = query_prefix
+        self.ids = [d["id"] for d in docs]
+        # Al arrancar solo se COLOCA en cuda (la emulación de ZeroGPU lo
+        # permite); todo cálculo ocurre dentro de `run_advanced`.
+        self.matrix = torch.from_numpy(embeddings).to("cuda")
+        self.encoder = SentenceTransformer(model_id, device="cuda")
+
+    def count(self):
+        """Cuántos vectores tiene el índice. Lo usa el health check: no calcula."""
+        return len(self.ids)
+
+    def search(self, query, n):
+        import torch
+
+        q = self.encoder.encode([self.query_prefix + query], normalize_embeddings=True,
+                                convert_to_tensor=True)
+        scores = self.matrix @ q[0].to(self.matrix.dtype)
+        return [self.ids[i] for i in torch.topk(scores, n).indices.tolist()]
+
+
 def build_zerogpu_retriever(docs):
-    """El retriever de M3 para ZeroGPU, con los embeddings calculados aparte.
+    """El retriever de M3 para ZeroGPU: mismos vectores, mismo top 8, todo en GPU.
 
-    Construir `R.DenseIndex` codifica los 1324 documentos con torch en el
-    proceso principal, y en ZeroGPU eso deja a los workers sin GPU (ver
-    `embed_docs.py`, con la medición). Aquí `embed_docs.py` corre en un proceso
-    hijo y este proceso solo carga la matriz en Chroma. El índice, la búsqueda
-    y el top 8 son los mismos.
+    Tres cosas lo separan de `E.build_retriever`, las tres medidas en el Space:
 
-    El encoder (para la consulta del usuario) y el reranker van en `cuda`, como
-    el generador. Con ellos en CPU la petición se quedaba colgada: el worker de
-    ZeroGPU es un fork de este proceso, que ya usó el pool de hilos de CPU de
-    torch (al fusionar el adaptador), y ese pool no sobrevive a un fork. En
-    `cuda` todo lo que calcula `run_advanced` corre en la GPU.
+    - Los embeddings de los documentos se calculan en un proceso hijo
+      (`embed_docs.py`): calcularlos con torch en el proceso principal dejaba
+      a todos los workers sin GPU.
+    - La búsqueda densa es `GpuDenseIndex`, no Chroma, que se cuelga dentro del
+      worker.
+    - El encoder de consultas y el reranker van en `cuda`: el worker hereda el
+      pool de hilos de CPU de torch roto por el fork, así que nada calcula en
+      CPU dentro de `run_advanced`.
     """
     import subprocess
     import tempfile
 
-    import chromadb
     import numpy as np
     import rag as R
-    from sentence_transformers import SentenceTransformer
 
     from efficiency import efficiency as E
 
     out = Path(tempfile.mkdtemp()) / "doc_embeddings.npy"
     subprocess.run([sys.executable, str(Path(__file__).with_name("embed_docs.py")), str(out)],
                    check=True)
-    embeddings = np.load(out)
-
-    # Lo mismo que hace `R.DenseIndex.__init__`, salvo calcular los embeddings.
-    dense = R.DenseIndex.__new__(R.DenseIndex)
-    dense.model_id = E.EMBED_MODEL
-    dense.query_prefix = R.EMBEDDING_CANDIDATES[E.EMBED_MODEL]["query_prefix"]
-    dense.encoder = SentenceTransformer(E.EMBED_MODEL, device="cuda")
-    dense.collection = chromadb.Client().create_collection(
-        "macgyver_docs", metadata={"hnsw:space": "cosine"})
-    for start in range(0, len(docs), 500):
-        batch = docs[start:start + 500]
-        dense.collection.add(
-            ids=[d["id"] for d in batch],
-            documents=[d["text"] for d in batch],
-            metadatas=[{"target": d["target"], "equipment": d["equipment"]} for d in batch],
-            embeddings=embeddings[start:start + 500].tolist(),
-        )
+    dense = GpuDenseIndex(docs, np.load(out), E.EMBED_MODEL,
+                          R.EMBEDDING_CANDIDATES[E.EMBED_MODEL]["query_prefix"])
     return R.Retriever(docs, dense, reranker=R.load_reranker(device="cuda"),
                        k=E.TOP_K, pool=E.POOL)
 

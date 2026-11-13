@@ -29,7 +29,8 @@ hay ninguna URL inventada.
 | Archivo | Qué hace |
 | --- | --- |
 | `app.py` | Blocks de Gradio, el manejador de petición de punta a punta, el filtro de producción y la resolución de imagen/GIF. Imports perezosos (no importa gradio/torch al cargarse). |
-| `health.py` | `health_check(state)` → liveness sin consulta real (modelos cargados + ping al índice Chroma). |
+| `health.py` | `health_check(state)` → liveness sin consulta real (modelos cargados + ping al índice Chroma, o en ZeroGPU que el índice tenga vectores). |
+| `embed_docs.py` | Calcula los embeddings del catálogo en un proceso aparte; solo lo usa el Space de ZeroGPU. |
 | `logging_utils.py` | Logger JSON estructurado por petición, sin PII. Esquema + validación. |
 | `wandb_utils.py` | Observabilidad W&B con no-op elegante si falta la clave. |
 | `selftest.py` | Self-test sin GPU/red (solo stdlib + numpy), con modelos mockeados. |
@@ -70,8 +71,13 @@ encontramos al probar el Space, y que el código ya resuelve:
 - **Nada de cálculo de torch en el proceso principal.** Codificar los 1324
   documentos del catálogo ahí dejaba a todos los workers sin GPU ("No CUDA GPUs
   are available" en `worker_init`). En ZeroGPU esos embeddings se calculan en un
-  proceso hijo (`embed_docs.py`) y la app solo los carga en Chroma. Los vectores
-  son idénticos bit a bit a los del proceso principal.
+  proceso hijo (`embed_docs.py`). Los vectores son idénticos bit a bit a los del
+  proceso principal.
+- **Nada de Chroma dentro del worker.** Chroma 1.x corre sobre un pool de hilos
+  de Rust que no existe en el fork, y la consulta se quedaba esperando. En
+  ZeroGPU la búsqueda densa es exacta, un producto de matrices en la GPU sobre
+  los mismos vectores (`GpuDenseIndex`); el HNSW de Chroma aproxima esa misma
+  búsqueda.
 - **Nada de cálculo en CPU dentro del worker.** El worker es un fork del proceso
   principal, y el pool de hilos de CPU de torch no sobrevive al fork: la
   petición se quedaba colgada. El encoder de consultas y el reranker van en
@@ -105,6 +111,7 @@ túnel como `cloudflared tunnel --url http://localhost:7860` también la publica
 | Generador | Qwen3-1.7B + LoRA de M1, fusionado, **bf16** | fp16, o **int4** con `QUANTIZED=1` |
 | Encoder de consultas y reranker | GPU | GPU |
 | Embeddings del catálogo | proceso hijo, CPU | proceso principal, GPU |
+| Búsqueda densa | exacta, producto de matrices en GPU | Chroma (HNSW), como M3 |
 
 El retriever sale de `final/efficiency/efficiency.py::build_retriever`, el mismo
 que usa la fila "antes" de `notebooks/M5_efficiency.ipynb`, con las decisiones de
@@ -146,7 +153,9 @@ filtro de producción + la resolución de imagen sobre un catálogo/dataset fals
   o, con `gradio_client`: `Client(URL).predict(api_name="/health")`.
 - **Qué devuelve:** `{status, models_loaded, index_ready, git_commit, timestamp,
   quantized, checks}`. Comprueba que el generador y el embedder cargaron y que un
-  ping trivial a Chroma responde (**sin** ejecutar una recomendación). `status` es
+  ping trivial a Chroma responde (**sin** ejecutar una recomendación). En ZeroGPU,
+  donde el proceso principal no puede calcular nada, comprueba que el índice en GPU
+  tenga sus vectores. `status` es
   `ok` / `degraded` (índice caído) / `down` (modelos no cargados).
 
 ## Formato del logging

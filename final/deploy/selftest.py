@@ -312,6 +312,25 @@ def main():
     check("health_json is valid JSON and reports 'down' before loading",
           health["status"] == "down", health["status"])
 
+    print("health on the ZeroGPU index (no compute in the main process)")
+
+    class CountingDense:
+        def count(self):
+            return 1324
+
+    class GpuState:
+        ready = True
+        quantized = False
+        systems = object()
+
+        class retriever:
+            dense = CountingDense()
+
+    gpu_status = health_mod.health_check(GpuState())
+    check("health_check is ok on an index that only reports its size",
+          gpu_status["status"] == "ok" and "1324" in gpu_status["checks"]["index"],
+          gpu_status["checks"]["index"])
+
     print("\nself-test", "PASSED" if not FAILURES else f"FAILED: {FAILURES}")
     if FAILURES:
         raise SystemExit(1)

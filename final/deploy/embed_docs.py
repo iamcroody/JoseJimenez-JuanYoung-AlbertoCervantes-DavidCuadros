@@ -12,7 +12,8 @@ con el generador solo, funciona.
 Este script hace la misma codificación que `m3/rag.py::DenseIndex` (mismo
 modelo, mismos documentos y en el mismo orden, `batch_size=64`,
 `normalize_embeddings=True`) en un proceso que no comparte estado con la app, y
-guarda la matriz. La app la carga en Chroma sin ejecutar el modelo.
+guarda la matriz. La app la pone en `cuda` (`app.GpuDenseIndex`) sin ejecutar
+el modelo.
 """
 
 import sys
