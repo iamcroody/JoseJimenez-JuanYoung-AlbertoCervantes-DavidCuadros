@@ -10,12 +10,18 @@ claves de pago obligatorias. Este módulo concilia ambos:
   - Si están disponibles, se inicializa un run (proyecto configurable por
     `WANDB_PROJECT`) y cada petición registra su latencia más contadores de uso.
 
-Métricas de uso registradas (>=1 exigida; registramos varias):
-  - `recommendations` vs `refusals`: acumulados, para ver cuántas veces el
-    sistema recomienda frente a cuántas aplica la válvula / el filtro.
-  - `filter_blocks`: cuántas veces el filtro de producción reemplazó una
-    respuesta no verificada (la mitigación ética de la sección 7).
-  - frecuencia de cada componente en `components_used` (rag/rerank/hyde/tool/vision).
+Qué ve quien abre el proyecto en W&B. Los nombres están en español y el prefijo
+antes de "/" agrupa los gráficos en secciones; el eje X es el número de petición.
+  - latencia/por_peticion_ms y latencia/mediana_ms (la mediana de las peticiones
+    del run hasta esa, es decir la p50).
+  - uso/recomendaciones, uso/rechazos_del_modelo (la válvula) y
+    uso/bloqueos_del_filtro (el filtro de producción reemplazó una respuesta que
+    no verificó): acumulados desde que arrancó el run.
+  - componentes/rag, rerank, hyde, vision y herramienta: cuántas peticiones
+    usaron cada pieza.
+  - la tabla "peticiones", una fila por petición (sin texto libre del usuario).
+Cada run se llama "<dónde> · <cuándo arrancó> · <commit>", no con el nombre al
+azar que W&B pone si no se le da uno.
 
 Toda la carga de `wandb` es perezosa: importar este archivo NO importa wandb, de
 modo que `ast.parse`/`py_compile` y el self-test quedan limpios sin la librería.
@@ -39,7 +45,11 @@ from pathlib import Path
 
 # Columnas de la tabla de peticiones. Solo vocabulario del catálogo, sin texto
 # libre del usuario (requisito de no guardar datos personales).
-REQUEST_COLUMNS = ["request", "muscle", "object_category", "outcome", "latency_ms"]
+REQUEST_COLUMNS = ["peticion", "musculo", "clase_de_equipo", "resultado", "latencia_ms"]
+OUTCOMES = {"recommended": "recomendó", "valve": "rechazo del modelo",
+            "filter": "bloqueo del filtro"}
+COMPONENT_NAMES = {"rag": "rag", "rerank": "rerank", "hyde": "hyde", "vision": "vision",
+                   "tool": "herramienta"}
 
 
 def _wandb_available():
@@ -68,7 +78,7 @@ class _RunWriter:
         if row is not None:
             self.rows.append(row)
             # La tabla completa en cada petición: W&B muestra la última versión.
-            record["requests"] = wandb.Table(columns=REQUEST_COLUMNS, data=list(self.rows))
+            record["peticiones"] = wandb.Table(columns=REQUEST_COLUMNS, data=list(self.rows))
         # commit=True: con `step` explícito, W&B deja el paso abierto hasta el
         # siguiente, y cada petición solo aparecía cuando llegaba la próxima.
         wandb.log(record, step=step, commit=True)
@@ -122,7 +132,9 @@ class WandbObserver:
             self.counters["recommendations"] += 1
         if valve_fired:
             self.counters["refusals"] += 1
-        if not passed_filter:
+        # Un rechazo del modelo tampoco pasa el filtro; aquí solo cuenta lo que
+        # el filtro bloqueó por su cuenta.
+        if not passed_filter and not valve_fired:
             self.counters["filter_blocks"] += 1
         for component in components_used or ():
             if component in self.component_counts:
@@ -135,23 +147,21 @@ class WandbObserver:
 
         self._step += 1
         if recommended:
-            outcome = "recommended"
+            outcome = OUTCOMES["recommended"]
         elif valve_fired:
-            outcome = "refused (valve)"
+            outcome = OUTCOMES["valve"]
         else:
-            outcome = "refused (filter)"
+            outcome = OUTCOMES["filter"]
         payload = {
-            "latency_ms": round(float(latency_ms), 1),
-            "latency_p50_ms": round(statistics.median(self._latencies), 1),
-            "valve_fired": int(bool(valve_fired)),
-            "passed_filter": int(bool(passed_filter)),
-            "recommended": int(bool(recommended)),
-            "cumulative/recommendations": self.counters["recommendations"],
-            "cumulative/refusals": self.counters["refusals"],
-            "cumulative/filter_blocks": self.counters["filter_blocks"],
+            "peticion": self._step,
+            "latencia/por_peticion_ms": round(float(latency_ms), 1),
+            "latencia/mediana_ms": round(statistics.median(self._latencies), 1),
+            "uso/recomendaciones": self.counters["recommendations"],
+            "uso/rechazos_del_modelo": self.counters["refusals"],
+            "uso/bloqueos_del_filtro": self.counters["filter_blocks"],
         }
         for component, count in self.component_counts.items():
-            payload[f"component_use/{component}"] = count
+            payload[f"componentes/{COMPONENT_NAMES[component]}"] = count
         row = [self._step, muscle or "", object_category or "", outcome,
                round(float(latency_ms), 1)]
         try:
@@ -205,9 +215,28 @@ def init_observer(project=None, run_name=None):
         return WandbObserver(enabled=False, project=project)
 
 
+def default_run_name():
+    """"Space · 14 nov 15:20 UTC · f7b0d1e": dónde corre, cuándo arrancó, qué código."""
+    from datetime import datetime, timezone
+
+    where = "Space" if os.environ.get("SPACES_ZERO_GPU") else "Local"
+    try:
+        root = Path(__file__).resolve().parents[2]
+        commit = subprocess.run(["git", "-C", str(root), "rev-parse", "--short", "HEAD"],
+                                capture_output=True, text=True, timeout=5).stdout.strip()
+    except Exception:
+        commit = ""
+    stamp = datetime.now(timezone.utc).strftime("%d/%m %H:%M UTC")
+    return " · ".join(part for part in (where, stamp, commit) if part)
+
+
 def start_run(project, run_name=None):
     """`wandb.init` con la misma configuración en los dos caminos."""
     import wandb
 
-    return wandb.init(project=project, name=run_name,
-                      config={"module": "M5-deploy", "seed": 42})
+    run = wandb.init(project=project, name=run_name or default_run_name(),
+                     config={"modulo": "M5-despliegue", "seed": 42})
+    # El eje X de cada gráfico es el número de petición, no el "Step" de W&B.
+    wandb.define_metric("peticion")
+    wandb.define_metric("*", step_metric="peticion")
+    return run

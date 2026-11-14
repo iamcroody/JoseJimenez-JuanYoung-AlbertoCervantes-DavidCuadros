@@ -250,13 +250,15 @@ def main():
                              passed_filter=True, recommended=True)
         observer.log_request(90.0, ["rag"], valve_fired=True,
                              passed_filter=False, recommended=False)
+        observer.log_request(95.0, ["rag"], valve_fired=False,
+                             passed_filter=False, recommended=False)
         check("observer counts recommendations and refusals",
               observer.counters["recommendations"] == 1
               and observer.counters["refusals"] == 1, observer.counters)
-        check("observer counts a filter block",
+        check("a filter block is counted, and a model refusal is not one",
               observer.counters["filter_blocks"] == 1, observer.counters)
         check("observer tallies component usage",
-              observer.component_counts["rag"] == 2
+              observer.component_counts["rag"] == 3
               and observer.component_counts["vision"] == 1, observer.component_counts)
         observer.finish()  # no-op seguro cuando está deshabilitado
 
@@ -331,13 +333,22 @@ def main():
     sent_observer.log_request(200.0, ["rag"], False, False, False,
                               muscle="triceps", object_category="dumbbell")
     check("one message per request, with its step", [s for s, _, _ in sink.sent] == [1, 2, 3])
-    check("latency and its running p50 are sent",
-          sink.sent[2][1]["latency_ms"] == 200.0 and sink.sent[2][1]["latency_p50_ms"] == 200.0,
-          sink.sent[2][1])
-    check("the request row names the outcome, with no free text",
+    last = sink.sent[2][1]
+    check("latency and its running median are sent under readable names",
+          last["latencia/por_peticion_ms"] == 200.0 and last["latencia/mediana_ms"] == 200.0
+          and last["peticion"] == 3, last)
+    check("usage counters split model refusals from filter blocks",
+          (last["uso/recomendaciones"], last["uso/rechazos_del_modelo"],
+           last["uso/bloqueos_del_filtro"]) == (1, 1, 1), last)
+    check("no 0/1 flag columns are sent as charts",
+          not any(k in last for k in ("valve_fired", "passed_filter", "recommended")))
+    check("the request row names the outcome in Spanish, with no free text",
           [row[3] for _, _, row in sink.sent]
-          == ["recommended", "refused (valve)", "refused (filter)"]
+          == ["recomendó", "rechazo del modelo", "bloqueo del filtro"]
           and sink.sent[0][2][:3] == [1, "biceps", "dumbbell"], [r for _, _, r in sink.sent])
+    name = W.default_run_name()
+    check("runs get a readable name, not W&B's random one",
+          name.startswith(("Space", "Local")) and "UTC" in name, name)
 
     print("what the screen shows in each state (ui.py, no gradio)")
     import ui
