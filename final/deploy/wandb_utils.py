@@ -69,7 +69,9 @@ class _RunWriter:
             self.rows.append(row)
             # La tabla completa en cada petición: W&B muestra la última versión.
             record["requests"] = wandb.Table(columns=REQUEST_COLUMNS, data=list(self.rows))
-        wandb.log(record, step=step)
+        # commit=True: con `step` explícito, W&B deja el paso abierto hasta el
+        # siguiente, y cada petición solo aparecía cuando llegaba la próxima.
+        wandb.log(record, step=step, commit=True)
 
 
 class _PipeSink:
