@@ -401,14 +401,18 @@ De la lectura honesta de M1/M2/M3:
 <!-- TODO: José, David y Alberto escriben su línea; no se inventan
      contribuciones individuales. -->
 
-- **Juan Andrés Young Hoyos:** el despliegue del sistema final. Lo llevó a un Space
-  de Hugging Face con ZeroGPU cuando HF dejó de permitir Spaces en CPU, y resolvió
-  lo que ZeroGPU exigía (cargar el adaptador, calcular los embeddings del catálogo
-  aparte, buscar en la GPU, gastar poca cuota por petición). Conectó la
-  observabilidad en W&B (métricas por petición, tabla de peticiones, proyecto
-  público), rediseñó la pantalla alrededor de la comprobación en el catálogo y
-  midió en el despliegue los casos con imagen y cuánto rechaza el sistema. Además,
-  punto de contacto con el profesor.
+- **Juan Andrés Young Hoyos:** monté la base del proyecto: el fork del catálogo
+  como submódulo fijo, el entorno con uv y la prueba en un T4 gratuito con la que
+  elegimos Qwen3-1.7B. En M1 llevé la tarea a código: el script que genera el
+  dataset desde el catálogo, el evaluador que califica contra el catálogo y no
+  contra una respuesta fija, la línea base zero-shot y el script de LoRA. En M2
+  corregí la dimensión 3 del harness para que califique contra el catálogo
+  alcanzable, arreglé las sondas de sesgo y llené el scorecard; en M3 ajusté la
+  entrega (dependencias y README). En el final hice el despliegue: llevé la app a
+  un Space con ZeroGPU cuando HF dejó de permitir Spaces en CPU y resolví lo que
+  ZeroGPU exigía, conecté W&B, rediseñé la pantalla alrededor de la comprobación en
+  el catálogo y medí en el despliegue los casos con imagen y cuánto rechaza el
+  sistema. Fui el punto de contacto con el profesor.
 - **José Alejandro Jiménez Vásquez:** TODO: confirmar aporte.
 - **David Cuadros Mariño:** TODO: confirmar aporte.
 - **Alberto Daniel Cervantes Forero:** TODO: confirmar aporte.
