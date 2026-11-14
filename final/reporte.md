@@ -185,17 +185,21 @@ mediana (p50) de reloj en la misma máquina (Colab T4). Fuentes:
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Línea base del Módulo 2 (sin RAG) | 0.787 | 4.714 | 21.4% | 0 (sin componente visual) | 7.9 s |
 | Sistema del Módulo 3 (RAG avanzado) | 0.705 | 2.429 | **42.9%** | 0 (sin componente visual) | 15.2 s |
-| Sistema del Módulo 4 (visual) | 0.705 | 2.429 | **42.9%** | hasta 14 (GIF del catálogo cuando hay recomendación) | ~15.2 s |
-| Sistema final (eficiente + desplegado, int4) | por completar (corrida T4) | por completar (corrida T4) | por completar (corrida T4) | hasta 14 (GIF del catálogo) | por completar (corrida T4) |
+| Sistema del Módulo 4 (visual) | 0.705 | 2.429 | **42.9%** | **3 de 14** | ~15.2 s |
+| Sistema final (eficiente + desplegado, int4) | por completar (corrida T4) | por completar (corrida T4) | por completar (corrida T4) | por completar (corrida T4) | por completar (corrida T4) |
 
 **Notas de la tabla (honestas).**
 - La fila M4 (visual) **no cambia los números del harness**: el componente visual
   es una capa de presentación (muestra el GIF del catálogo del ejercicio que el
   sistema M3 ya recomienda), no toca la generación ni la recuperación, así que las
   tres dimensiones y la latencia son las de la fila M3. Lo que cambia es "casos con
-  imagen": el Space muestra el GIF del catálogo siempre que el sistema recomienda
-  un ejercicio (y pasa el filtro); en los rechazos no hay imagen. El número exacto
-  por corrida se registra en el log JSON (`components_used` incluye `vision`).
+  imagen": el sistema muestra el GIF del catálogo solo cuando recomienda un
+  ejercicio y pasa el filtro; en los rechazos no hay imagen. Lo medimos con los 14
+  casos por el camino desplegado (`final/deploy/demo_probe.py --eval`,
+  `reports/image_cases_final.csv`): **3 de 14** muestran imagen (upper back, abs y
+  levator scapulae), los mismos 3 aciertos de M3 en los casos con respuesta. Los
+  4 adversariales no muestran imagen, que es lo correcto. En producción cada
+  petición lo registra en el log JSON (`components_used` incluye `vision`).
 - La fila **Sistema final** se mide sobre `sistema_rag_avanzado` cargado con el
   generador int4 en `notebooks/M5_efficiency.ipynb`. Sus celdas quedan en blanco a
   propósito hasta la corrida T4; el notebook escribe `reports/efficiency_m5.csv` y

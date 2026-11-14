@@ -1,6 +1,7 @@
 """Sondeo del sistema desplegado sobre una grilla de músculo x objeto.
 
     python final/deploy/demo_probe.py reports/demo_probe_final.csv
+    python final/deploy/demo_probe.py --eval reports/image_cases_final.csv
 
 Corre `app.handle_request` (el mismo camino que una petición del Space: RAG
 avanzado de M3, filtro de producción e imagen) sobre 12 músculos y 5 objetos, y
@@ -52,5 +53,37 @@ def main(out_path):
                       flush=True)
 
 
+def image_cases(out_path):
+    """Los 14 casos del eval set por el camino desplegado: ¿cuántos muestran imagen?
+
+    Usa el `input` de cada caso tal cual (los adversariales no son músculo + objeto)
+    y la misma lógica de `handle_request`: válvula, filtro de producción con el
+    músculo y el objeto del caso, e imagen solo si pasa.
+    """
+    import harness as H
+
+    state = A.SystemState().load()
+    with open(out_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["id", "kind", "outcome", "exercise", "image"])
+        for case in H.load_eval_set():
+            meta = case.get("meta", {})
+            reply = state.systems.sistema_rag_avanzado(case["input"])
+            passed, _ = A.passes_production_filter(
+                reply, meta.get("target", ""), meta.get("object", ""),
+                state.catalog_index, state.full_index)
+            media = None
+            if passed and not A.valve_fired(reply):
+                media, _ = A.resolve_media(reply, state.full_index, A.DATASET_DIR)
+            exercise = mg.parse_reply(reply)["exercise"] if media else ""
+            writer.writerow([case["id"], case["kind"],
+                             "recommended" if media else "refused", exercise,
+                             Path(media).name if media else ""])
+            print(f"{case['id']:26} {'IMG' if media else '---'} {exercise}", flush=True)
+
+
 if __name__ == "__main__":
-    main(sys.argv[1])
+    if sys.argv[1] == "--eval":
+        image_cases(sys.argv[2])
+    else:
+        main(sys.argv[1])
