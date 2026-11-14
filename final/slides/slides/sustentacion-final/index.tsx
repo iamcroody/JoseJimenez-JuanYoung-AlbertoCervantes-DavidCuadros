@@ -1,5 +1,12 @@
 import { Step, Steps, useSlidePageNumber } from '@open-slide/core';
 import type { DesignSystem, Page, SlideMeta, SlideTransition } from '@open-slide/core';
+import type { CSSProperties, ReactNode } from 'react';
+import crocCool from './assets/croc-cool.png';
+import crocIcon from './assets/croc-icon.png';
+import crocMuscle from './assets/croc-muscle.png';
+import crocTeam from './assets/croc-team.png';
+import crocThinking from './assets/croc-thinking.png';
+import crocWizard from './assets/croc-wizard.png';
 
 // Los GIF se leen del fork del catálogo en GitHub, fijado al mismo commit que el
 // submódulo, sin copiarlos a este repo: Gym visual permite redistribuirlos allí,
@@ -9,27 +16,50 @@ const CATALOG_MEDIA =
   'https://raw.githubusercontent.com/jayounghoyos/exercises-dataset/8872272c9f78cd30889523b79e34e95cca8c5637/videos';
 const gifHammerCurl = `${CATALOG_MEDIA}/0312-2NpxjC1.gif`;
 
-// El mismo lenguaje que el Space: fondo piedra, tinta, Geist y un solo azul
-// para lo que pasó la comprobación en el catálogo.
+// El lenguaje de la presentación del M1 (Croody): verde casi negro con anillos,
+// páginas crema alternadas, tarjetas oscuras, un dorado y etiquetas en mono.
 export const design: DesignSystem = {
-  palette: { bg: '#f4f3f1', text: '#0a0a0a', accent: '#1d5fbf' },
+  palette: { bg: '#030a02', text: '#f3f0e6', accent: '#d3b46a' },
   fonts: {
-    display: '"Geist", Inter, system-ui, sans-serif',
-    body: '"Geist", Inter, system-ui, sans-serif',
+    display: '"Inter", "Helvetica Neue", Arial, sans-serif',
+    body: '"Inter", "Helvetica Neue", Arial, sans-serif',
   },
   typeScale: { hero: 150, body: 40 },
-  radius: 12,
+  radius: 4,
 };
 
-const muted = '#6b6b6b';
-const surface = '#ffffff';
-const border = '#e6e6e6';
-const negative = '#c4242a';
-const PAD = 120;
-const ATTRIBUTION = 'GIF del catálogo © Gym visual, https://gymvisual.com/';
+const MONO = '"IBM Plex Mono", "Courier New", monospace';
+const CREAM = '#f3f0e6';
+const INK = '#13140f';
+const CARD = '#13140f';
+const CARD_GOLD = '#241f0e';
+const GOLD_DEEP = '#9a7a32';
+const MUTED_DARK = '#a3a897';
+const MUTED_CREAM = '#6d6c65';
+const LINE_DARK = 'rgba(243, 240, 230, 0.12)';
+const LINE_GOLD = 'rgba(211, 180, 106, 0.55)';
+const NEGATIVE = '#e0785f';
+const PAD_X = 150;
+const PAD_TOP = 104;
 
-const FONT_HREF = 'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700;800&display=swap';
+type Tone = 'dark' | 'cream';
+
+// ---------------------------------------------------------------- fuentes y movimiento
+
+const FONT_HREF =
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap';
 const FONT_LINK_ID = 'osd-webfont-sustentacion-final';
+const STYLE_ID = 'osd-styles-sustentacion-final';
+const CSS = `
+@keyframes mgr-ripple { 0%, 100% { stroke-opacity: 0.035 } 50% { stroke-opacity: 0.16 } }
+@keyframes mgr-glow { 0%, 100% { opacity: 0.75 } 50% { opacity: 1 } }
+@keyframes mgr-float { 0%, 100% { transform: translateY(0) rotate(0deg) } 50% { transform: translateY(-14px) rotate(-1.2deg) } }
+@keyframes mgr-pop { from { opacity: 0; transform: scale(0.9) } to { opacity: 1; transform: scale(1) } }
+@keyframes mgr-grow { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+@keyframes mgr-fade { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes mgr-blink { 0%, 49% { opacity: 1 } 50%, 100% { opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .mgr-anim, .mgr-anim * { animation: none !important } }
+`;
 if (typeof document !== 'undefined') {
   let link = document.getElementById(FONT_LINK_ID) as HTMLLinkElement | null;
   if (!link) {
@@ -39,6 +69,13 @@ if (typeof document !== 'undefined') {
     document.head.appendChild(link);
   }
   if (link.href !== FONT_HREF) link.href = FONT_HREF;
+  let style = document.getElementById(STYLE_ID);
+  if (!style) {
+    style = document.createElement('style');
+    style.id = STYLE_ID;
+    document.head.appendChild(style);
+  }
+  if (style.textContent !== CSS) style.textContent = CSS;
 }
 
 // Transiciones: una sola familia (RISE en la casa, SETTLE en la portada).
@@ -59,239 +96,343 @@ export const transition: SlideTransition = {
   },
 };
 
-const fill = {
-  width: '100%',
-  height: '100%',
-  boxSizing: 'border-box',
-  background: 'var(--osd-bg)',
-  color: 'var(--osd-text)',
-  fontFamily: 'var(--osd-font-body)',
-  position: 'relative',
-} as const;
+// ---------------------------------------------------------------- fondo y marco
 
-const pageStyle = { ...fill, padding: `${PAD}px ${PAD + 40}px` } as const;
+const Rings = ({ cx = 960, cy = 420 }: { cx?: number; cy?: number }) => (
+  <svg
+    className="mgr-anim"
+    viewBox="0 0 1920 1080"
+    width={1920}
+    height={1080}
+    aria-hidden="true"
+    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+  >
+    {Array.from({ length: 10 }, (_, i) => (
+      <circle
+        key={i}
+        cx={cx}
+        cy={cy}
+        r={150 * (i + 1)}
+        fill="none"
+        stroke="#8fc46f"
+        strokeOpacity={0.05}
+        strokeWidth={2}
+        style={{ animation: `mgr-ripple 7s ease-in-out ${i * 0.55}s infinite` }}
+      />
+    ))}
+  </svg>
+);
 
-const h2 = {
-  fontFamily: 'var(--osd-font-display)',
-  fontSize: 72,
-  lineHeight: 1.15,
-  fontWeight: 800,
-  letterSpacing: '-0.02em',
-  margin: 0,
-} as const;
+const Background = ({ tone, cx, cy }: { tone: Tone; cx?: number; cy?: number }) =>
+  tone === 'cream' ? null : (
+    <>
+      <div
+        className="mgr-anim"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: `radial-gradient(circle at ${((cx ?? 960) / 1920) * 100}% ${((cy ?? 420) / 1080) * 100}%, #0d2609 0%, #061805 30%, #030a02 62%, #010401 100%)`,
+          animation: 'mgr-glow 9s ease-in-out infinite',
+        }}
+      />
+      <Rings cx={cx} cy={cy} />
+    </>
+  );
 
-const lead = {
-  fontSize: 'var(--osd-size-body)',
-  lineHeight: 1.5,
-  color: muted,
-  margin: '28px 0 0',
-  maxWidth: 1300,
-} as const;
-
-// ---------------------------------------------------------------- piezas
-
-const Footer = () => {
+const Footer = ({ tone }: { tone: Tone }) => {
   const { current, total } = useSlidePageNumber();
+  const color = tone === 'dark' ? 'rgba(243, 240, 230, 0.38)' : '#8d8b82';
   return (
     <div
       style={{
         position: 'absolute',
-        left: PAD + 40,
-        right: PAD + 40,
-        bottom: 56,
+        left: PAD_X,
+        right: PAD_X,
+        bottom: 48,
         display: 'flex',
         justifyContent: 'space-between',
-        fontSize: 22,
-        color: muted,
+        fontFamily: MONO,
+        fontSize: 20,
+        letterSpacing: '0.18em',
+        color,
       }}
     >
-      <span>MacGyver Gym Rat · SI4006</span>
+      <span>MACGYVER GYM RAT</span>
       <span>
-        {String(current).padStart(2, '0')} / {String(total).padStart(2, '0')}
+        [ {String(current).padStart(2, '0')} / {String(total).padStart(2, '0')} ]
       </span>
     </div>
   );
 };
 
-const CheckMark = ({ ok = true, size = 40 }: { ok?: boolean; size?: number }) => (
-  <svg viewBox="0 0 12 12" width={size} height={size} aria-hidden="true" style={{ flex: 'none' }}>
-    {ok ? (
-      <path d="M2.5 6.2l2.3 2.3 4.7-5" fill="none" stroke="var(--osd-accent)" strokeWidth={1.8}
-        strokeLinecap="round" strokeLinejoin="round" />
-    ) : (
-      <path d="M3 3l6 6M9 3l-6 6" fill="none" stroke={negative} strokeWidth={1.8}
-        strokeLinecap="round" />
-    )}
-  </svg>
-);
-
-const CheckRow = ({ text }: { text: string }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 28, fontSize: 48, lineHeight: 1.3 }}>
-    <CheckMark size={52} />
-    <span>{text}</span>
+const Label = ({ n, text, tone }: { n: string; text: string; tone: Tone }) => (
+  <div
+    style={{
+      fontFamily: MONO,
+      fontSize: 24,
+      fontWeight: 500,
+      letterSpacing: '0.24em',
+      textTransform: 'uppercase',
+      color: tone === 'dark' ? 'var(--osd-accent)' : GOLD_DEEP,
+      marginBottom: 36,
+    }}
+  >
+    {n} · {text}
   </div>
 );
 
-const GifCard = ({ src, caption, size = 360 }: { src: string; caption: string; size?: number }) => (
-  <figure style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 20, width: size + 48 }}>
-    <div
-      style={{
-        background: surface,
-        border: `2px solid ${border}`,
-        borderRadius: 'var(--osd-radius)',
-        padding: 24,
-      }}
-    >
-      <img src={src} alt={caption} style={{ width: size, height: size, display: 'block' }} />
-    </div>
-    <figcaption style={{ fontSize: 24, lineHeight: 1.4, color: muted }}>{caption}</figcaption>
-  </figure>
-);
-
-const FlowNode = ({ title, sub, tag }: { title: string; sub: string; tag: string }) => (
+const Shell = ({
+  tone,
+  n,
+  label,
+  children,
+  cx,
+  cy,
+}: {
+  tone: Tone;
+  n: string;
+  label: string;
+  children: ReactNode;
+  cx?: number;
+  cy?: number;
+}) => (
   <div
     style={{
-      background: surface,
-      border: `2px solid ${border}`,
-      borderRadius: 'var(--osd-radius)',
-      padding: '32px 28px',
-      width: 300,
-      height: 300,
+      width: '100%',
+      height: '100%',
       boxSizing: 'border-box',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
+      position: 'relative',
+      overflow: 'hidden',
+      background: tone === 'dark' ? 'var(--osd-bg)' : CREAM,
+      color: tone === 'dark' ? 'var(--osd-text)' : INK,
+      fontFamily: 'var(--osd-font-body)',
     }}
   >
-    <div>
-      <div style={{ fontSize: 36, fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
-      <div style={{ fontSize: 26, lineHeight: 1.4, color: muted, marginTop: 14 }}>{sub}</div>
+    <Background tone={tone} cx={cx} cy={cy} />
+    <div style={{ position: 'relative', padding: `${PAD_TOP}px ${PAD_X}px 0` }}>
+      <Label n={n} text={label} tone={tone} />
+      {children}
     </div>
-    <div style={{ fontSize: 24, color: 'var(--osd-accent)', fontWeight: 500 }}>{tag}</div>
+    <Footer tone={tone} />
   </div>
 );
 
-const Arrow = () => (
-  <svg viewBox="0 0 40 24" width={44} height={26} aria-hidden="true" style={{ flex: 'none' }}>
-    <path d="M2 12h32M26 4l8 8-8 8" fill="none" stroke={muted} strokeWidth={2.5}
-      strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
+// ---------------------------------------------------------------- piezas
 
-const Outcome = ({ ok, title, text }: { ok: boolean; title: string; text: string }) => (
+const h2: CSSProperties = {
+  fontFamily: 'var(--osd-font-display)',
+  fontSize: 72,
+  lineHeight: 1.12,
+  fontWeight: 700,
+  letterSpacing: '-0.02em',
+  margin: 0,
+};
+
+const muted = (tone: Tone) => (tone === 'dark' ? MUTED_DARK : MUTED_CREAM);
+
+const lead = (tone: Tone): CSSProperties => ({
+  fontSize: 'var(--osd-size-body)',
+  lineHeight: 1.5,
+  color: muted(tone),
+  margin: '28px 0 0',
+  maxWidth: 1300,
+});
+
+const Card = ({
+  children,
+  gold = false,
+  style,
+}: {
+  children: ReactNode;
+  gold?: boolean;
+  style?: CSSProperties;
+}) => (
   <div
     style={{
-      flex: 1,
-      background: surface,
-      border: `2px solid ${border}`,
+      background: gold ? CARD_GOLD : CARD,
+      border: `2px solid ${gold ? LINE_GOLD : LINE_DARK}`,
       borderRadius: 'var(--osd-radius)',
-      padding: '32px 36px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 28,
-    }}
-  >
-    <CheckMark ok={ok} size={56} />
-    <div>
-      <div style={{ fontSize: 36, fontWeight: 700 }}>{title}</div>
-      <div style={{ fontSize: 30, lineHeight: 1.4, color: muted, marginTop: 6 }}>{text}</div>
-    </div>
-  </div>
-);
-
-const CaseCard = ({ kind, input, expect }: { kind: string; input: string; expect: string }) => (
-  <div
-    style={{
-      background: surface,
-      border: `2px solid ${border}`,
-      borderRadius: 'var(--osd-radius)',
-      padding: '40px 40px',
-      width: 500,
-      height: 400,
+      color: CREAM,
       boxSizing: 'border-box',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 22,
-    }}
-  >
-    <div style={{ fontSize: 30, fontWeight: 700, color: 'var(--osd-accent)' }}>{kind}</div>
-    <div style={{ fontSize: 40, fontWeight: 700, lineHeight: 1.25 }}>{input}</div>
-    <div style={{ fontSize: 30, lineHeight: 1.45, color: muted }}>{expect}</div>
-  </div>
-);
-
-const Bar = ({ label, value, max, hue = false }: { label: string; value: number; max: number; hue?: boolean }) => (
-  <div style={{ display: 'grid', gridTemplateColumns: '440px 1fr 200px', alignItems: 'center', gap: 32 }}>
-    <div style={{ fontSize: 34, lineHeight: 1.3 }}>{label}</div>
-    <div style={{ height: 48, background: '#e9e7e3', borderRadius: 6 }}>
-      <div
-        style={{
-          width: `${(value / max) * 100}%`,
-          height: '100%',
-          background: hue ? 'var(--osd-accent)' : 'var(--osd-text)',
-          borderRadius: 6,
-        }}
-      />
-    </div>
-    <div style={{ fontSize: 48, fontWeight: 800, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-      {value.toFixed(1).replace('.', ',')} %
-    </div>
-  </div>
-);
-
-const Figure = ({ value, label, color }: { value: string; label: string; color?: string }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-    <div style={{ fontSize: 96, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1,
-      fontVariantNumeric: 'tabular-nums', color }}>{value}</div>
-    <div style={{ fontSize: 30, lineHeight: 1.4, color: muted, maxWidth: 460 }}>{label}</div>
-  </div>
-);
-
-const Cell = ({ children, head = false, pending = false }:
-  { children: string; head?: boolean; pending?: boolean }) => (
-  <div
-    style={{
-      fontSize: head ? 26 : 32,
-      color: head ? muted : pending ? muted : 'var(--osd-text)',
-      fontStyle: pending ? 'italic' : 'normal',
-      padding: '22px 0',
-      borderBottom: `2px solid ${head ? '#d4d4d4' : border}`,
+      ...style,
     }}
   >
     {children}
   </div>
 );
 
+const Mascot = ({
+  src,
+  alt,
+  width,
+  delay = 0,
+  style,
+}: {
+  src: string;
+  alt: string;
+  width: number;
+  delay?: number;
+  style?: CSSProperties;
+}) => (
+  <div
+    className="mgr-anim"
+    style={{
+      position: 'absolute',
+      animation: `mgr-pop 600ms cubic-bezier(0.2, 0.8, 0.2, 1) ${delay}ms both`,
+      ...style,
+    }}
+  >
+    <div style={{ animation: `mgr-float 6s ease-in-out ${delay + 600}ms infinite` }}>
+      <div
+        style={{
+          background: '#030a02',
+          border: `2px solid ${LINE_GOLD}`,
+          borderRadius: 'var(--osd-radius)',
+          overflow: 'hidden',
+          width,
+          lineHeight: 0,
+        }}
+      >
+        <img src={src} alt={alt} style={{ width: '100%', display: 'block' }} />
+      </div>
+    </div>
+  </div>
+);
+
+const CheckMark = ({ ok = true, size = 40, color }: { ok?: boolean; size?: number; color?: string }) => (
+  <svg viewBox="0 0 12 12" width={size} height={size} aria-hidden="true" style={{ flex: 'none' }}>
+    {ok ? (
+      <path d="M2.5 6.2l2.3 2.3 4.7-5" fill="none" stroke={color ?? 'var(--osd-accent)'} strokeWidth={1.8}
+        strokeLinecap="round" strokeLinejoin="round" />
+    ) : (
+      <path d="M3 3l6 6M9 3l-6 6" fill="none" stroke={NEGATIVE} strokeWidth={1.8}
+        strokeLinecap="round" />
+    )}
+  </svg>
+);
+
+const Arrow = ({ color }: { color: string }) => (
+  <svg viewBox="0 0 40 24" width={44} height={26} aria-hidden="true" style={{ flex: 'none' }}>
+    <path d="M2 12h32M26 4l8 8-8 8" fill="none" stroke={color} strokeWidth={2.5}
+      strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const Tag = ({ children, color = 'var(--osd-accent)', tight = false }:
+  { children: ReactNode; color?: string; tight?: boolean }) => (
+  <div style={{ fontFamily: MONO, fontSize: tight ? 20 : 22, letterSpacing: tight ? '0.08em' : '0.16em',
+    textTransform: 'uppercase', whiteSpace: 'nowrap', color }}>
+    {children}
+  </div>
+);
+
+const Terminal = ({ rows, style }: { rows: [string, string, boolean?][]; style?: CSSProperties }) => (
+  <Card style={{ padding: '28px 36px', fontFamily: MONO, ...style }}>
+    {rows.map(([k, v, hi], i) => (
+      <div key={k} style={{ display: 'flex', gap: 28, fontSize: 24, lineHeight: 1.75 }}>
+        <span style={{ color: MUTED_DARK, width: i === 0 ? 'auto' : 180, flex: 'none' }}>{k}</span>
+        <span style={{ color: hi ? 'var(--osd-accent)' : CREAM, fontWeight: hi ? 500 : 400 }}>{v}</span>
+      </div>
+    ))}
+  </Card>
+);
+
+const Figure = ({
+  value,
+  label,
+  color,
+  size = 88,
+}: {
+  value: string;
+  label: string;
+  color?: string;
+  size?: number;
+}) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div style={{ fontSize: size, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1,
+      fontVariantNumeric: 'tabular-nums', color }}>{value}</div>
+    <div style={{ fontSize: 28, lineHeight: 1.4, color: MUTED_DARK, maxWidth: 460 }}>{label}</div>
+  </div>
+);
+
 // ---------------------------------------------------------------- páginas
 
 const Cover: Page = () => (
-  <div style={{ ...fill, padding: `${PAD}px ${PAD + 40}px`, display: 'flex', alignItems: 'center', gap: 120 }}>
-    <div style={{ flex: 1 }}>
-      <h1
-        style={{
-          fontFamily: 'var(--osd-font-display)',
-          fontSize: 'var(--osd-size-hero)',
-          fontWeight: 800,
-          letterSpacing: '-0.035em',
-          lineHeight: 1,
-          margin: 0,
-        }}
-      >
-        MacGyver
-        <br />
-        Gym Rat
-      </h1>
-      <p style={{ ...lead, color: 'var(--osd-text)', fontSize: 44, marginTop: 44, maxWidth: 1000 }}>
-        Un ejercicio real para el músculo que quieres, con lo que tienes en casa.
-        O un "no" honesto cuando no hay uno seguro.
-      </p>
-      <p style={{ fontSize: 28, color: muted, marginTop: 64, lineHeight: 1.5 }}>
-        Juan Andrés Young · José Alejandro Jiménez · David Cuadros · Alberto Cervantes
-        <br />
-        SI4006 · Universidad EAFIT · noviembre de 2026
-      </p>
+  <div
+    style={{
+      width: '100%',
+      height: '100%',
+      position: 'relative',
+      overflow: 'hidden',
+      background: 'var(--osd-bg)',
+      color: 'var(--osd-text)',
+      fontFamily: 'var(--osd-font-body)',
+    }}
+  >
+    <Background tone="dark" cx={1480} cy={400} />
+    <div style={{ position: 'relative', padding: `80px ${PAD_X}px 0` }}>
+      <div style={{ fontFamily: MONO, fontSize: 22, letterSpacing: '0.24em', color: 'var(--osd-accent)',
+        marginTop: 40 }}>
+        SI4006 · TÓPICOS ESPECIALES EN IA · SUSTENTACIÓN FINAL
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: 64 }}>
+        <div>
+          <h1 style={{ fontFamily: 'var(--osd-font-display)', fontSize: 132, fontWeight: 800,
+            letterSpacing: '-0.035em', lineHeight: 1, margin: 0 }}>
+            MacGyver
+            <br />
+            Gym Rat
+          </h1>
+          <p style={{ ...lead('dark'), fontSize: 32, marginTop: 30, maxWidth: 1040 }}>
+            Un ejercicio real para el músculo que quieres, con lo que tienes en casa.
+            O un "no" honesto cuando no hay uno seguro.
+          </p>
+        </div>
+        <figure className="mgr-anim" style={{ margin: '-100px 40px 0 0', width: 320,
+          animation: 'mgr-pop 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 250ms both' }}>
+          <div style={{ background: CREAM, border: `2px solid ${LINE_GOLD}`, borderRadius: 'var(--osd-radius)',
+            padding: 20 }}>
+            <img src={gifHammerCurl} alt="dumbbell hammer curl v. 2" style={{ width: 276, height: 276, display: 'block' }} />
+          </div>
+          <figcaption style={{ fontFamily: MONO, fontSize: 18, lineHeight: 1.5, color: MUTED_DARK, marginTop: 14 }}>
+            dumbbell hammer curl v. 2
+            <br />
+            GIF del catálogo © Gym visual
+            <br />
+            https://gymvisual.com/
+          </figcaption>
+        </figure>
+      </div>
     </div>
-    <GifCard src={gifHammerCurl} caption={`dumbbell hammer curl v. 2. ${ATTRIBUTION}`} />
+    <div style={{ position: 'absolute', left: PAD_X, right: PAD_X, bottom: 100, display: 'flex', gap: 40 }}>
+      <Terminal
+        style={{ width: 700, padding: '22px 32px' }}
+        rows={[
+          ['> final · despliegue', ''],
+          ['modelo', 'Qwen3-1.7B + LoRA'],
+          ['sistema', 'RAG + comprobación'],
+          ['estado', 'EN LÍNEA', true],
+        ]}
+      />
+      <Card gold style={{ flex: 1, padding: 28, display: 'flex', alignItems: 'center', gap: 32 }}>
+        <img src={crocTeam} alt="Croody en Medellín" style={{ width: 150, height: 150, borderRadius: 2, flex: 'none' }} />
+        <div>
+          <div style={{ fontFamily: MONO, fontSize: 22, color: 'var(--osd-accent)', letterSpacing: '0.08em' }}>
+            MacGyver Gym Rat · Equipo
+          </div>
+          <div style={{ fontSize: 25, lineHeight: 1.55, marginTop: 14 }}>
+            Juan Andrés Young · José Alejandro Jiménez
+            <br />
+            David Cuadros · Alberto Cervantes
+          </div>
+          <div style={{ fontSize: 22, color: MUTED_DARK, marginTop: 8 }}>Universidad EAFIT · noviembre de 2026</div>
+        </div>
+      </Card>
+    </div>
+    <div style={{ position: 'absolute', right: PAD_X, bottom: 48, fontFamily: MONO, fontSize: 20,
+      letterSpacing: '0.18em', color: 'rgba(243, 240, 230, 0.38)' }}>
+      [ 01 / 10 ]
+    </div>
   </div>
 );
 Cover.transition = {
@@ -308,208 +449,345 @@ Cover.transition = {
 };
 
 const Problem: Page = () => (
-  <div style={pageStyle}>
-    <Steps>
-      <h2 style={{ ...h2, fontSize: 96, maxWidth: 1500, marginTop: 60 }}>
-        Hoy toca bíceps. No hay gimnasio. Solo hay dos botellas de agua.
-      </h2>
-      <Step>
-        <p style={{ ...lead, fontSize: 44, marginTop: 80, maxWidth: 1400 }}>
-          Hoy esa persona se salta el músculo, hace algo genérico o copia algo de internet
-          sin saber si sirve ni si es seguro.
-        </p>
-      </Step>
-    </Steps>
-    <Footer />
+  <Shell tone="cream" n="01" label="El problema">
+    <div style={{ display: 'flex', gap: 96, alignItems: 'flex-start' }}>
+      <div style={{ flex: 1 }}>
+        <Steps>
+          <h2 style={{ ...h2, fontSize: 92, marginTop: 24 }}>
+            Hoy toca bíceps. No hay gimnasio. Solo hay dos botellas de agua.
+          </h2>
+          <Step>
+            <p style={{ ...lead('cream'), fontSize: 40, marginTop: 64 }}>
+              Hoy esa persona se salta el músculo, hace algo genérico o copia algo de internet
+              sin saber si sirve ni si es seguro.
+            </p>
+          </Step>
+        </Steps>
+      </div>
+      <Card style={{ width: 560, height: 640, flex: 'none', padding: '40px 44px', display: 'flex',
+        flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ fontSize: 120, lineHeight: 0.8, fontWeight: 800, color: 'var(--osd-accent)' }}>"</div>
+          <img src={crocIcon} alt="" style={{ width: 96, height: 96, mixBlendMode: 'lighten' }} />
+        </div>
+        <div style={{ fontFamily: MONO, fontSize: 26, lineHeight: 1.7 }}>
+          <div style={{ color: 'var(--osd-accent)' }}>$ pedido</div>
+          <div>quiero entrenar bíceps</div>
+          <div>tengo: dos botellas de agua</div>
+          <div style={{ color: 'var(--osd-accent)', marginTop: 28 }}>$ respuesta</div>
+          <div>
+            ?
+            <span className="mgr-anim" style={{ animation: 'mgr-blink 1.1s steps(1) infinite' }}>_</span>
+          </div>
+        </div>
+        <div style={{ fontSize: 22, lineHeight: 1.5, color: MUTED_DARK }}>
+          Croody construye productos para vivir mejor fuera de ellos, no para quedarse dentro.
+        </div>
+      </Card>
+    </div>
+  </Shell>
+);
+
+const CheckRow = ({ text }: { text: string }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 28, borderLeft: '6px solid var(--osd-accent)',
+    padding: '18px 0 18px 32px', fontSize: 46, lineHeight: 1.25, fontWeight: 500 }}>
+    <CheckMark size={50} />
+    <span>{text}</span>
   </div>
 );
 
 const GoodAnswer: Page = () => (
-  <div style={pageStyle}>
+  <Shell tone="dark" n="02" label="La métrica" cx={1560} cy={560}>
     <h2 style={h2}>Una buena respuesta pasa tres comprobaciones</h2>
     <Steps>
-      <Step><div style={{ marginTop: 72 }}><CheckRow text="El ejercicio existe en un catálogo de 1.324" /></div></Step>
-      <Step><div style={{ marginTop: 36 }}><CheckRow text="Entrena el músculo que pediste" /></div></Step>
-      <Step><div style={{ marginTop: 36 }}><CheckRow text="Se puede hacer con tu objeto" /></div></Step>
+      <Step><div style={{ marginTop: 64 }}><CheckRow text="El ejercicio existe en un catálogo de 1.324" /></div></Step>
+      <Step><div style={{ marginTop: 28 }}><CheckRow text="Entrena el músculo que pediste" /></div></Step>
+      <Step><div style={{ marginTop: 28 }}><CheckRow text="Se puede hacer con tu objeto" /></div></Step>
       <Step>
-        <p style={{ ...lead, marginTop: 72 }}>
-          Si ninguno pasa, la buena respuesta es decir que no. Esa es la métrica que defendemos.
-        </p>
+        <Card gold style={{ marginTop: 64, padding: '28px 36px', maxWidth: 1400 }}>
+          <p style={{ fontSize: 36, lineHeight: 1.45, margin: 0 }}>
+            Si ninguno pasa, la buena respuesta es decir que no. Esa es la métrica que defendemos.
+          </p>
+        </Card>
       </Step>
     </Steps>
-    <Footer />
-  </div>
+  </Shell>
+);
+
+const FlowNode = ({ title, sub, tag }: { title: string; sub: string; tag: string }) => (
+  <Card style={{ padding: '32px 28px', width: 300, height: 300, display: 'flex', flexDirection: 'column',
+    justifyContent: 'space-between' }}>
+    <div>
+      <div style={{ fontSize: 34, fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
+      <div style={{ fontSize: 25, lineHeight: 1.4, color: MUTED_DARK, marginTop: 14 }}>{sub}</div>
+    </div>
+    <Tag tight>{tag}</Tag>
+  </Card>
+);
+
+const Outcome = ({ ok, title, text }: { ok: boolean; title: string; text: string }) => (
+  <Card gold={ok} style={{ flex: 1, padding: '28px 36px', display: 'flex', alignItems: 'center', gap: 28 }}>
+    <CheckMark ok={ok} size={56} />
+    <div>
+      <div style={{ fontSize: 34, fontWeight: 700 }}>{title}</div>
+      <div style={{ fontSize: 28, lineHeight: 1.4, color: MUTED_DARK, marginTop: 6 }}>{text}</div>
+    </div>
+  </Card>
 );
 
 const System: Page = () => (
-  <div style={pageStyle}>
+  <Shell tone="cream" n="03" label="El sistema">
+    <Mascot src={crocThinking} alt="Croody pensando" width={200} delay={150} style={{ right: PAD_X, top: 56 }} />
     <h2 style={h2}>El sistema, de tu pedido a la respuesta</h2>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 22, marginTop: 88 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 22, marginTop: 80 }}>
       <Steps>
         <FlowNode title="Tu pedido" sub="Un músculo y un objeto de tu casa" tag="La pantalla" />
         <Step>
           <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
-            <Arrow />
+            <Arrow color={INK} />
             <FlowNode title="Busca en el catálogo" sub="Los 8 ejercicios más parecidos" tag="Módulo 3" />
           </div>
         </Step>
         <Step>
           <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
-            <Arrow />
+            <Arrow color={INK} />
             <FlowNode title="El modelo escribe" sub="Qwen3-1.7B ajustado a la tarea" tag="Módulo 1" />
           </div>
         </Step>
         <Step>
           <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
-            <Arrow />
+            <Arrow color={INK} />
             <FlowNode title="Se comprueba" sub="Las tres comprobaciones" tag="Módulo 2 y final" />
           </div>
         </Step>
       </Steps>
     </div>
     {/* 4 cajas de 300 y 3 flechas de 88: el ancho del flujo de arriba. */}
-    <div style={{ display: 'flex', gap: 40, marginTop: 64, width: 4 * 300 + 3 * 88 }}>
+    <div style={{ display: 'flex', gap: 40, marginTop: 56, width: 4 * 300 + 3 * 88 }}>
       <Outcome ok title="Pasa" text="El ejercicio, con sus pasos reales y su GIF del catálogo" />
       <Outcome ok={false} title="No pasa" text={'"No hay una opción segura", sin imagen'} />
     </div>
-    <Footer />
-  </div>
+  </Shell>
+);
+
+const CaseCard = ({ kind, input, expect, gold = false }:
+  { kind: string; input: string; expect: string; gold?: boolean }) => (
+  <Card gold={gold} style={{ padding: '40px 40px', width: 500, height: 420, display: 'flex',
+    flexDirection: 'column', gap: 24 }}>
+    <Tag>{kind}</Tag>
+    <div style={{ fontSize: 40, fontWeight: 700, lineHeight: 1.25 }}>{input}</div>
+    <div style={{ fontSize: 29, lineHeight: 1.45, color: MUTED_DARK }}>{expect}</div>
+  </Card>
 );
 
 const Demo: Page = () => (
-  <div style={pageStyle}>
+  <Shell tone="dark" n="04" label="Demo en vivo" cx={960} cy={980}>
     <h2 style={h2}>Demo en vivo: tres casos</h2>
     <div style={{ display: 'flex', gap: 40, marginTop: 72 }}>
       <Steps>
         <Step>
-          <CaseCard kind="Fácil" input="Bíceps con dos botellas de agua" expect="Un curl con mancuernas, sus pasos y su GIF." />
+          <CaseCard kind="01 · Fácil" input="Bíceps con dos botellas de agua"
+            expect="Un curl con mancuernas, sus pasos y su GIF." />
         </Step>
         <Step>
-          <CaseCard kind="Difícil" input="Espalda alta con dos latas de comida" expect='Las latas nunca dicen "mancuerna", y aun así llega a un remo.' />
+          <CaseCard kind="02 · Difícil" input="Espalda alta con dos latas de comida"
+            expect='Las latas nunca dicen "mancuerna", y aun así llega a un remo.' />
         </Step>
         <Step>
-          <CaseCard kind="Trampa" input="Dorsales con dos latas de comida" expect="El catálogo no tiene ninguno: tiene que decir que no." />
+          <CaseCard gold kind="03 · Trampa" input="Dorsales con dos latas de comida"
+            expect="El catálogo no tiene ninguno: tiene que decir que no." />
         </Step>
       </Steps>
     </div>
-    <p style={{ fontSize: 30, color: muted, marginTop: 56 }}>
+    <div style={{ fontFamily: MONO, fontSize: 28, marginTop: 56, color: MUTED_DARK }}>
+      <span style={{ color: 'var(--osd-accent)' }}>&gt; </span>
       huggingface.co/spaces/jayoungh/macgyver-gym-rat
-    </p>
-    <Footer />
+    </div>
+  </Shell>
+);
+
+const Bar = ({ label, value, max, delay, hi = false }:
+  { label: string; value: number; max: number; delay: number; hi?: boolean }) => (
+  <div style={{ display: 'grid', gridTemplateColumns: '440px 1fr 200px', alignItems: 'center', gap: 32 }}>
+    <div style={{ fontSize: 32, lineHeight: 1.3, fontWeight: hi ? 700 : 400 }}>{label}</div>
+    <div style={{ height: 44, background: '#e2ddcc', borderRadius: 2 }}>
+      <div
+        className="mgr-anim"
+        style={{
+          width: `${(value / max) * 100}%`,
+          height: '100%',
+          background: hi ? GOLD_DEEP : INK,
+          borderRadius: 2,
+          transformOrigin: 'left center',
+          animation: `mgr-grow 1000ms cubic-bezier(0.2, 0.7, 0.2, 1) ${delay}ms both`,
+        }}
+      />
+    </div>
+    <div
+      className="mgr-anim"
+      style={{
+        fontFamily: MONO,
+        fontSize: 44,
+        fontWeight: 500,
+        textAlign: 'right',
+        color: hi ? GOLD_DEEP : INK,
+        animation: `mgr-fade 500ms ease-out ${delay + 700}ms both`,
+      }}
+    >
+      {value.toFixed(1).replace('.', ',')} %
+    </div>
   </div>
 );
 
 const Result: Page = () => (
-  <div style={pageStyle}>
+  <Shell tone="cream" n="05" label="Resultados">
+    <Mascot src={crocMuscle} alt="Croody fuerte" width={190} delay={1800} style={{ right: PAD_X, top: 56 }} />
     <h2 style={h2}>Buscar en el catálogo duplicó los aciertos</h2>
-    <p style={{ ...lead, fontSize: 30, marginTop: 20 }}>
+    <p style={{ ...lead('cream'), fontFamily: MONO, fontSize: 24, marginTop: 20 }}>
       Las mismas 14 preguntas y la misma vara para todos: las tres comprobaciones del catálogo.
     </p>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 40, marginTop: 64 }}>
-      <Steps>
-        <Step><Bar label="Sin ajustar el modelo" value={0} max={50} /></Step>
-        <Step><Bar label="Modelo ajustado, sin buscar" value={21.4} max={50} /></Step>
-        <Step><Bar label="Modelo ajustado que busca" value={42.9} max={50} hue /></Step>
-      </Steps>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 36, marginTop: 64 }}>
+      <Bar label="Sin ajustar el modelo" value={0} max={50} delay={200} />
+      <Bar label="Modelo ajustado, sin buscar" value={21.4} max={50} delay={600} />
+      <Bar label="Modelo ajustado que busca" value={42.9} max={50} delay={1000} hi />
     </div>
-    <div style={{ display: 'flex', gap: 120, marginTop: 72 }}>
-      <Figure value="0 → 3 de 4" label="casos trampa resueltos al buscar" />
-      <Figure value="0,55 → 1,00" label="pasos iguales a los del catálogo (ROUGE-L)" />
+    <div className="mgr-anim" style={{ display: 'flex', gap: 40, marginTop: 64,
+      animation: 'mgr-fade 600ms ease-out 1900ms both' }}>
+      <Card style={{ padding: '32px 40px', width: 620 }}>
+        <Figure size={72} value="0 → 3 de 4" label="casos trampa resueltos al buscar" color="var(--osd-accent)" />
+      </Card>
+      <Card style={{ padding: '32px 40px', width: 620 }}>
+        <Figure size={72} value="0,55 → 1,00" label="pasos iguales a los del catálogo (ROUGE-L)" />
+      </Card>
     </div>
-    <Footer />
-  </div>
+  </Shell>
 );
 
 const Cost: Page = () => (
-  <div style={pageStyle}>
+  <Shell tone="dark" n="06" label="El costo" cx={420} cy={860}>
     <h2 style={h2}>Lo que costó</h2>
-    <div style={{ display: 'flex', gap: 140, marginTop: 96 }}>
-      <Figure value="7,9 s → 15,2 s" label="por pregunta al buscar en el catálogo (GPU T4, mediana)" />
-      <Figure value="38,9 s" label="con el agente y su herramienta, que bajaba los aciertos a 28,6 %" />
+    <div style={{ display: 'flex', gap: 40, marginTop: 80 }}>
+      <Card style={{ padding: '44px 48px', width: 760 }}>
+        <Figure value="7,9 s → 15,2 s" label="por pregunta al buscar en el catálogo (GPU T4, mediana)" />
+      </Card>
+      <Card gold style={{ padding: '44px 48px', width: 760 }}>
+        <Figure value="38,9 s" color="var(--osd-accent)"
+          label="con el agente y su herramienta, que bajaba los aciertos a 28,6 %" />
+      </Card>
     </div>
     <Steps>
       <Step>
-        <p style={{ ...lead, color: 'var(--osd-text)', marginTop: 96, maxWidth: 1500 }}>
+        <p style={{ ...lead('dark'), color: 'var(--osd-text)', marginTop: 80, maxWidth: 1500 }}>
           El doble de tiempo compra ejercicios reales con sus pasos reales. El agente no lo
           compensaba: lo medimos y lo dejamos fuera del despliegue.
         </p>
       </Step>
     </Steps>
-    <Footer />
+  </Shell>
+);
+
+const Cell = ({ children, head = false, pending = false, first = false }:
+  { children: string; head?: boolean; pending?: boolean; first?: boolean }) => (
+  <div
+    style={{
+      fontFamily: first && !head ? 'var(--osd-font-body)' : MONO,
+      fontSize: head ? 20 : first ? 30 : 28,
+      letterSpacing: head ? '0.16em' : 0,
+      textTransform: head ? 'uppercase' : 'none',
+      color: head ? 'var(--osd-accent)' : pending ? MUTED_DARK : CREAM,
+      fontStyle: pending ? 'italic' : 'normal',
+      fontWeight: first && !head ? 700 : 400,
+      padding: '26px 0',
+      borderBottom: `2px solid ${LINE_DARK}`,
+    }}
+  >
+    {children}
   </div>
 );
 
 const Efficiency: Page = () => (
-  <div style={pageStyle}>
+  <Shell tone="cream" n="07" label="Eficiencia">
     <h2 style={h2}>Eficiencia: el modelo a 4 bits</h2>
-    <p style={{ ...lead, fontSize: 32, marginTop: 20 }}>
+    <p style={{ ...lead('cream'), fontSize: 32, marginTop: 20 }}>
       Antes de medir: aceptamos perder hasta 5 puntos si baja la memoria y no sube la latencia.
     </p>
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '360px repeat(4, 1fr)',
-        columnGap: 32,
-        marginTop: 64,
-      }}
-    >
-      <Cell head>Versión</Cell>
-      <Cell head>Aciertos</Cell>
-      <Cell head>Latencia p50</Cell>
-      <Cell head>Latencia p95</Cell>
-      <Cell head>Memoria</Cell>
-      <Cell>Antes (16 bits)</Cell>
-      <Cell pending>pendiente</Cell>
-      <Cell pending>pendiente</Cell>
-      <Cell pending>pendiente</Cell>
-      <Cell pending>pendiente</Cell>
-      <Cell>Después (4 bits)</Cell>
-      <Cell pending>pendiente</Cell>
-      <Cell pending>pendiente</Cell>
-      <Cell pending>pendiente</Cell>
-      <Cell pending>pendiente</Cell>
-    </div>
-    <p style={{ fontSize: 28, color: muted, marginTop: 48 }}>
+    <Card style={{ marginTop: 56, padding: '28px 48px 36px' }}>
+      <Tag>Corrida en GPU T4 · antes y después</Tag>
+      <div style={{ display: 'grid', gridTemplateColumns: '340px repeat(4, 1fr)', columnGap: 32, marginTop: 12 }}>
+        <Cell head>Versión</Cell>
+        <Cell head>Aciertos</Cell>
+        <Cell head>Latencia p50</Cell>
+        <Cell head>Latencia p95</Cell>
+        <Cell head>Memoria</Cell>
+        <Cell first>Antes (16 bits)</Cell>
+        <Cell pending>pendiente</Cell>
+        <Cell pending>pendiente</Cell>
+        <Cell pending>pendiente</Cell>
+        <Cell pending>pendiente</Cell>
+        <Cell first>Después (4 bits)</Cell>
+        <Cell pending>pendiente</Cell>
+        <Cell pending>pendiente</Cell>
+        <Cell pending>pendiente</Cell>
+        <Cell pending>pendiente</Cell>
+      </div>
+    </Card>
+    <p style={{ fontFamily: MONO, fontSize: 22, color: MUTED_CREAM, marginTop: 36 }}>
       Las cifras salen de la corrida en Colab T4 (notebooks/M5_efficiency.ipynb).
     </p>
-    <Footer />
-  </div>
+  </Shell>
 );
 
 const Fails: Page = () => (
-  <div style={pageStyle}>
-    <h2 style={h2}>Lo que falla: prefiere callar a inventar</h2>
-    <div style={{ display: 'flex', gap: 120, marginTop: 88 }}>
+  <Shell tone="dark" n="08" label="Lo que falla" cx={1620} cy={300}>
+    <Mascot src={crocWizard} alt="Croody mago" width={210} delay={150} style={{ right: PAD_X, top: 56 }} />
+    <h2 style={{ ...h2, maxWidth: 1300 }}>Lo que falla: prefiere callar a inventar</h2>
+    <div style={{ display: 'flex', gap: 40, marginTop: 80 }}>
       <Steps>
-        <Step><Figure value="7 de 49" label="combinaciones con respuesta en el catálogo que sí respondió" color={negative} /></Step>
-        <Step><Figure value="11 de 11" label="combinaciones sin respuesta en las que dijo que no" /></Step>
-        <Step><Figure value="0" label="ejercicios inventados o que no aplican, mostrados al usuario" /></Step>
+        <Step>
+          <Card style={{ padding: '40px 44px', width: 500, height: 290, borderLeft: `6px solid ${NEGATIVE}` }}>
+            <Figure value="7 de 49" label="combinaciones con respuesta en el catálogo que sí respondió" color={NEGATIVE} />
+          </Card>
+        </Step>
+        <Step>
+          <Card style={{ padding: '40px 44px', width: 500, height: 290 }}>
+            <Figure value="11 de 11" label="combinaciones sin respuesta en las que dijo que no" />
+          </Card>
+        </Step>
+        <Step>
+          <Card style={{ padding: '40px 44px', width: 500, height: 290 }}>
+            <Figure value="0" label="ejercicios inventados o que no aplican, mostrados al usuario" />
+          </Card>
+        </Step>
       </Steps>
     </div>
-    <p style={{ ...lead, fontSize: 34, marginTop: 96, maxWidth: 1500 }}>
-      Arreglo: buscar solo en la clase de equipo del objeto, sin preguntarle al modelo.
-    </p>
-    <Footer />
-  </div>
+    <Card gold style={{ marginTop: 56, padding: '28px 36px', display: 'flex', gap: 28, alignItems: 'baseline' }}>
+      <Tag>Arreglo</Tag>
+      <span style={{ fontSize: 32, lineHeight: 1.4 }}>
+        Buscar solo en la clase de equipo del objeto, sin preguntarle al modelo.
+      </span>
+    </Card>
+  </Shell>
 );
 
 const Protection = ({ text }: { text: string }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 22, fontSize: 36, lineHeight: 1.3 }}>
-    <CheckMark size={40} />
+  <div style={{ display: 'flex', alignItems: 'center', gap: 22, fontSize: 34, lineHeight: 1.3 }}>
+    <CheckMark size={38} />
     <span>{text}</span>
   </div>
 );
 
 const Ethics: Page = () => (
-  <div style={pageStyle}>
+  <Shell tone="dark" n="09" label="Ética y cierre" cx={1500} cy={470}>
+    <Mascot src={crocCool} alt="Croody con gafas" width={460} delay={200} style={{ right: PAD_X, top: 210 }} />
     <h2 style={h2}>El peor error posible</h2>
-    <p style={{ fontSize: 56, fontWeight: 700, lineHeight: 1.25, margin: '48px 0 0' }}>
+    <p style={{ fontSize: 54, fontWeight: 700, lineHeight: 1.25, margin: '40px 0 0', color: 'var(--osd-accent)',
+      maxWidth: 1100 }}>
       "Cuélgate de la barra de la cortina."
     </p>
-    <p style={{ ...lead, fontSize: 32, marginTop: 16 }}>
+    <p style={{ ...lead('dark'), fontSize: 30, marginTop: 14 }}>
       Lo dijo el modelo sin buscar, y el juez automático le puso 5 de 5.
     </p>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 22, marginTop: 52 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 44 }}>
       <Steps>
         <Step><Protection text="La válvula: dice que no en vez de inventar" /></Step>
         <Step><Protection text="La comprobación en el catálogo antes de mostrar" /></Step>
@@ -517,13 +795,15 @@ const Ethics: Page = () => (
         <Step><Protection text="Sin datos personales en los registros" /></Step>
       </Steps>
     </div>
-    <div style={{ position: 'absolute', left: PAD + 40, bottom: 110, fontSize: 26, lineHeight: 1.6, color: muted }}>
-      Demo: huggingface.co/spaces/jayoungh/macgyver-gym-rat
-      <br />
-      Métricas: wandb.ai/jayoungh-me/macgyver-gym-rat-m5
-    </div>
-    <Footer />
-  </div>
+    <Terminal
+      style={{ marginTop: 48, width: 1100 }}
+      rows={[
+        ['> enlaces', ''],
+        ['demo', 'huggingface.co/spaces/jayoungh/macgyver-gym-rat', true],
+        ['métricas', 'wandb.ai/jayoungh-me/macgyver-gym-rat-m5', true],
+      ]}
+    />
+  </Shell>
 );
 
 export const meta: SlideMeta = {
@@ -561,7 +841,7 @@ contra el catálogo (M2 y el final). Corre en un Space con GPU prestada y cada p
   `Cambiar al Space. Hacer los tres casos en este orden: fácil, difícil, trampa.
 Cada petición tarda unos 10 a 15 segundos. Si el Space falla, usar el video de respaldo.
 Al final abrir "Estado del sistema" para mostrar el health check. (2 minutos)`,
-  `Mismas 14 preguntas y misma vara para todas las filas.
+  `Mismas 14 preguntas y misma vara para todas las filas. Las barras crecen solas al entrar.
 Sin ajustar: 0 por ciento. Ajustado: 21,4. Ajustado y buscando: 42,9.
 Los casos trampa pasan de 0 a 3 de 4, y los pasos ahora son los del catálogo. (1 minuto)`,
   `El costo: buscar duplica el tiempo, de 7,9 a 15,2 segundos en un T4.
