@@ -569,7 +569,7 @@ def launch_kwargs():
     """Lo que `launch()` necesita para la cara de la app (Gradio 6 lo toma aquí)."""
     import ui
 
-    return {"theme": ui.theme(), "css": ui.CSS, "head": ui.HEAD,
+    return {"theme": ui.theme(), "css": ui._scoped(ui.CSS), "head": ui.HEAD,
             "allowed_paths": [str(DATASET_DIR)]}
 
 

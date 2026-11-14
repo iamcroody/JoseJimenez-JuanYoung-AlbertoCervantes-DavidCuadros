@@ -62,7 +62,6 @@ body, .gradio-container { background: var(--mg-ground) !important; }
 .gradio-container { box-sizing: border-box !important; width: 100% !important;
   max-width: 1152px !important; margin: 0 auto !important;
   padding: 0 24px 48px !important; font-variant-numeric: tabular-nums; }
-.gradio-container .prose, .gradio-container .prose * { color: inherit; }
 .gradio-container .main.app { padding: 8px 0 0 !important; }
 .mg-html .html-container { padding: 0 !important; }
 #mg-bar .form, #mg-answer .form { background: transparent !important; border: 0 !important;
@@ -74,7 +73,7 @@ body, .gradio-container { background: var(--mg-ground) !important; }
 .mg-brand { display: flex; align-items: center; gap: 10px; font-size: 15px;
   font-weight: 700; color: var(--mg-text); letter-spacing: -0.01em; white-space: nowrap; }
 .mg-links { display: flex; gap: 20px; }
-.mg-links a { font-size: 14px; font-weight: 500; color: var(--mg-muted);
+.mg-links a, .mg-links a span { font-size: 14px; font-weight: 500; color: var(--mg-muted);
   text-decoration: none; white-space: nowrap; }
 .mg-links a:hover, .mg-links a:focus-visible { color: var(--mg-text); }
 
@@ -222,6 +221,25 @@ THEME_VALUES = {
     "panel_background_fill": "#ffffff",
     "panel_border_color": "#e6e6e6",
 }
+
+
+def _scoped(css):
+    """Antepone `.gradio-container` a cada selector propio (.mg-*, #mg-*).
+
+    Gradio pinta el texto de sus bloques HTML con reglas de "prose" que ganaban a
+    las clases sueltas: en el Space los enlaces salían azules y subrayados y el
+    texto gris salía negro. Con la clase del contenedor delante, las reglas de
+    esta pantalla pesan más que las de Gradio.
+    """
+    import re
+
+    def fix(match):
+        selectors = [s.strip() for s in match.group(1).split(",")]
+        scoped = [f".gradio-container {s}" if s.startswith((".mg", "#mg")) else s
+                  for s in selectors]
+        return ", ".join(scoped) + " {"
+
+    return re.sub(r"(?m)^([^@{}\n][^{}\n]*)\{", fix, css)
 
 
 def theme():
