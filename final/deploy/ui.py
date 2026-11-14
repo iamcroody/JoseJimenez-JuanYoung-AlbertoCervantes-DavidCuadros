@@ -140,6 +140,18 @@ body, .gradio-container { background: var(--mg-ground) !important; }
 
 #mg-media img { border-radius: 6px; background: var(--mg-raised); }
 
+/* Estado del sistema: una lectura para personas, el JSON debajo. */
+.mg-health { display: grid; grid-template-columns: 160px 1fr; gap: 6px 16px; margin: 0 0 4px; }
+.mg-health dt { font-size: 13px; color: var(--mg-muted); margin: 0; }
+.mg-health dd { font-size: 14px; color: var(--mg-text); margin: 0; }
+.mg-pill { display: inline-block; font-size: 12px; font-weight: 500; line-height: 20px;
+  padding: 0 8px; border-radius: 4px; white-space: nowrap; }
+.mg-pill.ok { background: #dcfae5; color: #04250e; }
+.mg-pill.warn { background: #fffbeb; color: #92400e; }
+.mg-pill.down { background: #ffedea; color: #831c1e; }
+#mg-health-row { align-items: center !important; }
+#mg-health-row button { flex: none !important; width: auto !important; min-width: 0 !important; }
+
 /* Pie. */
 .mg-footer { font-size: 12px; line-height: 18px; color: var(--mg-muted);
   padding: 20px 0 0; margin: 0; }
@@ -342,6 +354,27 @@ def answer_html(result, target, obj):
             + (f'<h3>Pasos</h3><ol class="mg-steps">{steps}</ol>' if steps else "")
             + (f'<p class="mg-safety">{html.escape(safety)}</p>' if safety else "")
             + FOOT + '</div>')
+
+
+HEALTH_LABELS = {"ok": ("ok", "Listo"), "degraded": ("warn", "Índice sin responder"),
+                 "down": ("down", "Caído")}
+
+
+def health_html(data):
+    """El health check en palabras. `data` es el dict de `health.health_check`."""
+    css, label = HEALTH_LABELS.get(data.get("status"), ("warn", data.get("status", "?")))
+    checks = data.get("checks", {})
+    stamp = (data.get("timestamp") or "")[:19].replace("T", " ")
+    rows = [
+        ("Estado", f'<span class="mg-pill {css}">{html.escape(label)}</span>'),
+        ("Modelos", html.escape(checks.get("models", "-"))),
+        ("Índice", html.escape(checks.get("index", "-"))),
+        ("Generador", "int4 (QUANTIZED=1)" if data.get("quantized") else "bf16 o fp16"),
+        ("Versión del código", html.escape(data.get("git_commit", "-"))),
+        ("Revisado", f"{html.escape(stamp)} UTC" if stamp else "-"),
+    ]
+    body = "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in rows)
+    return f'<dl class="mg-health" aria-label="Estado del sistema">{body}</dl>'
 
 
 def footer_html():

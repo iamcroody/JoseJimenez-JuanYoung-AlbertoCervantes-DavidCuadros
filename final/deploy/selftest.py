@@ -366,6 +366,12 @@ def main():
     check("the object note names its equipment class in Spanish",
           "mancuerna" in ui.class_note_html("two filled water bottles"))
 
+    readout = ui.health_html(health_mod.health_check(FakeState()))
+    check("the health readout says Listo in words when the check is ok",
+          'mg-pill ok' in readout and "Listo" in readout)
+    check("the health readout says Caído when models are not loaded",
+          "Caído" in ui.health_html(health_mod.health_check(NotReady())))
+
     print("muscle choices come from the catalog")
     muscles = app.catalog_muscles()
     check("the muscle list uses the catalog's spelling",

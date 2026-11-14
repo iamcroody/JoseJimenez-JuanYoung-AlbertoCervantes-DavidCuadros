@@ -501,6 +501,12 @@ def build_interface(state=None, observer=None, run=None):
     def on_health():
         return health_json(state)
 
+    def on_health_screen():
+        import json
+
+        text = health_json(state)
+        return ui.health_html(json.loads(text)), text
+
     with gr.Blocks(title="MacGyver Gym Rat") as demo:
         gr.HTML(ui.top_bar_html(), elem_classes="mg-html")
         gr.HTML(ui.title_html(), elem_classes="mg-html")
@@ -528,12 +534,20 @@ def build_interface(state=None, observer=None, run=None):
                                          height=320, buttons=["fullscreen"])
         with gr.Accordion("Estado del sistema (health check, sin consulta real)",
                           open=False):
-            health_btn = gr.Button("Ver estado", size="sm")
-            health_out = gr.Code(label="/health", language="json")
-            # api_name="health" lo publica en la API de Gradio: se llama sin
-            # abrir la página (ver final/deploy/README.md, "Health check").
-            health_btn.click(on_health, inputs=None, outputs=health_out,
+            with gr.Row(elem_id="mg-health-row"):
+                health_btn = gr.Button("Revisar ahora", size="sm", variant="secondary",
+                                       scale=0)
+            health_view = gr.HTML(elem_classes="mg-html")
+            health_out = gr.Code(label="/health (JSON)", language="json", max_lines=14)
+        # La API `health` devuelve el JSON tal cual; la pantalla además lo traduce.
+        health_api_out = gr.Code(visible=False)
+        health_api_btn = gr.Button(visible=False)
+        # api_name="health" lo publica en la API de Gradio: se llama sin
+        # abrir la página (ver final/deploy/README.md, "Health check").
+        health_api_btn.click(on_health, inputs=None, outputs=health_api_out,
                              api_name="health")
+        health_btn.click(on_health_screen, inputs=None, outputs=[health_view, health_out],
+                         api_name=False)
         gr.HTML(ui.footer_html(), elem_classes="mg-html")
 
         # La API `recommend` conserva su forma (texto, imagen) para quien la
