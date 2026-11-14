@@ -116,6 +116,9 @@ body, .gradio-container { background: var(--mg-ground) !important; }
 .mg-checks li { display: flex; align-items: center; gap: 6px; font-size: 13px;
   color: var(--mg-text); margin: 0; }
 .mg-checks li.ok svg { color: var(--mg-hue); }
+/* Gradio pinta cada elemento de un bloque HTML con su color de texto, también el
+   <path> de un SVG, y `currentColor` tomaba ese negro en vez del color del ícono. */
+.mg-checks svg *, .mg-brand svg * { color: inherit; }
 .mg-checks li.no svg { color: var(--mg-negative); }
 .mg-checks li.no { color: var(--mg-muted); }
 .mg-checks li.wait { color: var(--mg-muted); }
