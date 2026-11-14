@@ -15,9 +15,10 @@ component, a production safety filter, a health check, JSON logging and W&B obse
 - **Live demo (HF Spaces, ZeroGPU):** <https://huggingface.co/spaces/jayoungh/macgyver-gym-rat>. Pick a muscle and an object from the
   lists. Signing in to Hugging Face first gives you a larger daily GPU quota (5 minutes a
   day for a free account, 2 without signing in; one request uses about 10 seconds).
-- **W&B project:** TODO, paste the project link here after the first run with `WANDB_API_KEY`
-  set (`https://wandb.ai/<entity>/macgyver-gym-rat-m5`). Without the key, W&B is a silent
-  no-op and the app still runs.
+- **W&B project:** <https://wandb.ai/jayoungh-me/macgyver-gym-rat-m5>. Each run is one start of the Space, named after its start time
+  and commit; the charts show latency per request and its median, recommendations against
+  refusals and filter blocks, and how often each component ran. Without `WANDB_API_KEY`,
+  W&B is a silent no-op and the app still runs.
 - **Final report:** [`final/reporte.md`](final/reporte.md) covers the problem, the system
   diagram, the justified decisions, the evolutionary table, the ablation, the error analysis,
   the limitations, the ethics questions and who did what.

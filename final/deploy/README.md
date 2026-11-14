@@ -17,12 +17,10 @@ para el filtro, y el generador int4 de la feature de eficiencia
 
 - **Space en vivo:** <https://huggingface.co/spaces/jayoungh/macgyver-gym-rat> (ZeroGPU, sirve la rama o el commit de
   `REPO_REF`).
-- **Proyecto W&B:** TODO: pegar aquí el enlace del proyecto tras la primera
-  corrida con `WANDB_API_KEY` configurada
-  (`https://wandb.ai/<entidad>/macgyver-gym-rat-m5`).
-
-El enlace de W&B es un placeholder a propósito hasta que el Space tenga la
-clave: no hay ninguna URL inventada.
+- **Proyecto W&B:** <https://wandb.ai/jayoungh-me/macgyver-gym-rat-m5>. Cada run es un arranque del Space y se llama
+  "<dónde> · <cuándo arrancó> · <commit>"; los gráficos están en tres secciones
+  (latencia, uso, componentes) con la petición como eje X, y la tabla
+  "peticiones" tiene una fila por petición, sin texto libre del usuario.
 
 ## Archivos
 
