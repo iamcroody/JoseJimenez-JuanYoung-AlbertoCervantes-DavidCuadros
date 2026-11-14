@@ -443,7 +443,9 @@ def handle_request(state, observer, target, obj, run=None):
         recommended=has_media,
     )
     L.log_record(record_json)
-    observer.log_request(latency_ms, comps, refused, passed, has_media)
+    observer.log_request(latency_ms, comps, refused, passed, has_media,
+                         muscle=record_json["muscle"],
+                         object_category=record_json["object_category"])
 
     return display_text, media_path
 

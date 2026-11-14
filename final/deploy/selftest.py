@@ -312,6 +312,33 @@ def main():
     check("health_json is valid JSON and reports 'down' before loading",
           health["status"] == "down", health["status"])
 
+    print("what the W&B observer sends (fake sink, no network)")
+    import wandb_utils as W
+
+    class FakeSink:
+        def __init__(self):
+            self.sent = []
+
+        def write(self, step, payload, row):
+            self.sent.append((step, payload, row))
+
+    sink = FakeSink()
+    sent_observer = W.WandbObserver(enabled=True, project="test", sink=sink)
+    sent_observer.log_request(100.0, ["rag", "vision"], False, True, True,
+                              muscle="biceps", object_category="dumbbell")
+    sent_observer.log_request(300.0, ["rag"], True, False, False,
+                              muscle="lats", object_category="dumbbell")
+    sent_observer.log_request(200.0, ["rag"], False, False, False,
+                              muscle="triceps", object_category="dumbbell")
+    check("one message per request, with its step", [s for s, _, _ in sink.sent] == [1, 2, 3])
+    check("latency and its running p50 are sent",
+          sink.sent[2][1]["latency_ms"] == 200.0 and sink.sent[2][1]["latency_p50_ms"] == 200.0,
+          sink.sent[2][1])
+    check("the request row names the outcome, with no free text",
+          [row[3] for _, _, row in sink.sent]
+          == ["recommended", "refused (valve)", "refused (filter)"]
+          and sink.sent[0][2][:3] == [1, "biceps", "dumbbell"], [r for _, _, r in sink.sent])
+
     print("muscle choices come from the catalog")
     muscles = app.catalog_muscles()
     check("the muscle list uses the catalog's spelling",
