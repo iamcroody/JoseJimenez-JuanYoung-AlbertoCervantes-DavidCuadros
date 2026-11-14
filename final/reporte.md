@@ -430,6 +430,10 @@ De la lectura honesta de M1/M2/M3:
   asignación, recomputar las cifras del README desde `reports/` y redactar este
   reporte y las ediciones de portada, manteniendo cada cifra trazable a una corrida
   ejecutada o marcada como placeholder de la corrida T4.
+- **Diapositivas:** la estructura y el contenido de la sustentación los planeamos
+  nosotros. Con open-slide, y Claude Code escribiendo las páginas, pudimos
+  organizarlo mejor en una presentación: cada idea en su página, el aspecto de
+  nuestra presentación del M1 y las animaciones.
 - Los modelos dentro del sistema (el LoRA de M1 sobre Qwen3-1.7B como generador,
   Qwen2.5-1.5B y Qwen2.5-3B como jueces, bge-small-en-v1.5 y MiniLM como embeddings,
   el reranker cross-encoder) están descritos arriba y no son parte de esta
