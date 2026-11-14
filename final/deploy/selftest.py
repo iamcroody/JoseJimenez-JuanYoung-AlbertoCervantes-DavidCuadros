@@ -339,6 +339,33 @@ def main():
           == ["recommended", "refused (valve)", "refused (filter)"]
           and sink.sent[0][2][:3] == [1, "biceps", "dumbbell"], [r for _, _, r in sink.sent])
 
+    print("what the screen shows in each state (ui.py, no gradio)")
+    import ui
+
+    ok_detail = {"exercise_real": True, "target_match": True, "equipment_match": True}
+    shown = ui.answer_html({"reply": answer_reply, "media_path": "x.gif", "refused": False,
+                            "passed": True, "detail": ok_detail}, "biceps", obj)
+    check("a verified answer shows the exercise, its steps and three passed checks",
+          "test biceps curl" in shown and "Curl the weight." in shown
+          and shown.count('class="ok"') == 3)
+    valve = ui.answer_html({"reply": valve_reply, "media_path": None, "refused": True,
+                            "passed": False, "detail": {}}, "lats", obj)
+    check("a valve refusal says so and invents nothing",
+          "No hay una opción segura" in valve and "<ol" not in valve)
+    blocked = ui.answer_html({"reply": wrong_muscle, "media_path": None, "refused": False,
+                              "passed": False, "detail": {"exercise_real": True,
+                                                          "target_match": False,
+                                                          "equipment_match": True}},
+                             "biceps", obj)
+    check("a filter block names the proposal and marks the check that failed",
+          "test air squat" in blocked and blocked.count('class="no"') == 1)
+    escaped = ui.answer_html({"reply": "Exercise: <script>x</script>\nSteps:\n1. a",
+                              "media_path": "x.gif", "refused": False, "passed": True,
+                              "detail": ok_detail}, "biceps", obj)
+    check("model text is escaped before it reaches the page", "<script>" not in escaped)
+    check("the object note names its equipment class in Spanish",
+          "mancuerna" in ui.class_note_html("two filled water bottles"))
+
     print("muscle choices come from the catalog")
     muscles = app.catalog_muscles()
     check("the muscle list uses the catalog's spelling",

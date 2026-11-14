@@ -97,15 +97,9 @@ VALVE_MESSAGE = (
     "trainer or a health professional."
 )
 
-# Aviso de alcance y de que el sistema SUGIERE, una persona decide (requisito del
-# PDF para dominios sensibles; aquí el dominio es salud/ejercicio). Las imágenes
-# provienen del CATÁLOGO, no son generadas: se marca explícitamente.
-DISCLAIMER = (
-    "Esta herramienta **sugiere**; la decisión es tuya y no sustituye a un "
-    "entrenador ni a un profesional de la salud. Cubre solo 4 clases de equipo "
-    "(dumbbell, kettlebell, weighted, body weight). La imagen/GIF proviene del "
-    "catálogo de ejercicios (NO es generada por IA)."
-)
+# El aviso de que el sistema SUGIERE y una persona decide (requisito del PDF para
+# dominios sensibles), y de que la imagen es del catálogo y no generada, vive en
+# `ui.FOOT`, al pie de cada respuesta.
 
 
 # --------------------------------------------------------------------------
@@ -406,6 +400,16 @@ def run_advanced(prompt):
 def handle_request(state, observer, target, obj, run=None):
     """Procesa una petición de punta a punta y devuelve (texto, ruta_media).
 
+    Es la forma de la API `recommend`, de los self-tests y de `demo_probe.py`.
+    La pantalla usa `serve_request`, que devuelve además lo que dibuja.
+    """
+    result = serve_request(state, observer, target, obj, run=run)
+    return result["display_text"], result["media_path"]
+
+
+def serve_request(state, observer, target, obj, run=None):
+    """Una petición de punta a punta, con todo lo que la pantalla necesita.
+
     Pasos: construir el prompt (misma definición que M1/M2/M3), correr el sistema
     avanzado, aplicar el FILTRO de producción, resolver la imagen si procede,
     registrar el log JSON sin PII y la observabilidad W&B. `run` es quien genera
@@ -417,7 +421,7 @@ def handle_request(state, observer, target, obj, run=None):
     reply = (run or state.systems.sistema_rag_avanzado)(prompt)
 
     refused = valve_fired(reply)
-    passed, _detail = passes_production_filter(
+    passed, detail = passes_production_filter(
         reply, target, obj, state.catalog_index, state.full_index)
 
     media_path, record = (None, None)
@@ -447,7 +451,9 @@ def handle_request(state, observer, target, obj, run=None):
                          muscle=record_json["muscle"],
                          object_category=record_json["object_category"])
 
-    return display_text, media_path
+    return {"display_text": display_text, "media_path": media_path, "reply": reply,
+            "refused": refused, "passed": passed, "detail": detail,
+            "latency_ms": latency_ms}
 
 
 # --------------------------------------------------------------------------
@@ -477,6 +483,7 @@ def build_interface(state=None, observer=None, run=None):
     """
     import gradio as gr
 
+    import ui
     import wandb_utils as W
 
     state = state or SystemState()
@@ -485,38 +492,71 @@ def build_interface(state=None, observer=None, run=None):
     def on_submit(target, obj):
         return handle_request(state, observer, target, obj, run=run)
 
+    def on_submit_screen(target, obj):
+        result = serve_request(state, observer, target, obj, run=run)
+        media = result["media_path"]
+        return (ui.answer_html(result, target, obj), gr.Column(visible=media is not None),
+                media)
+
     def on_health():
         return health_json(state)
 
-    with gr.Blocks(title="MacGyver Gym Rat (M5)") as demo:
-        gr.Markdown("# MacGyver Gym Rat\n" + DISCLAIMER)
-        with gr.Row():
-            with gr.Column():
+    with gr.Blocks(title="MacGyver Gym Rat") as demo:
+        gr.HTML(ui.top_bar_html(), elem_classes="mg-html")
+        gr.HTML(ui.title_html(), elem_classes="mg-html")
+        with gr.Column(elem_id="mg-bar"):
+            with gr.Row(elem_id="mg-bar-row", equal_height=False):
                 # Lista cerrada con el vocabulario del catálogo: el filtro de
                 # producción compara el músculo pedido con el del ejercicio, y
                 # con texto libre "tricep" (el catálogo dice "triceps") rechazaba
                 # una respuesta correcta. Lo vimos en el Space.
-                target = gr.Dropdown(label="Músculo objetivo",
+                target = gr.Dropdown(label="Músculo objetivo", scale=3, min_width=180,
                                      choices=catalog_muscles(), value="biceps")
-                obj = gr.Dropdown(label="Objeto casero disponible",
+                obj = gr.Dropdown(label="Objeto casero disponible", scale=4, min_width=220,
                                   choices=DEFAULT_OBJECTS,
                                   value=DEFAULT_OBJECTS[0], allow_custom_value=True)
-                submit = gr.Button("Recomendar", variant="primary")
-            with gr.Column():
-                out_text = gr.Textbox(label="Recomendación", lines=10)
-                out_media = gr.Image(label="Ejercicio del catálogo (imagen/GIF, no generada)")
-        with gr.Accordion("Health check (liveness, sin consulta real)", open=False):
-            health_btn = gr.Button("Ver estado")
+                submit = gr.Button("Recomendar", variant="primary", scale=2, min_width=160)
+            class_note = gr.HTML(ui.class_note_html(DEFAULT_OBJECTS[0]),
+                                 elem_classes="mg-html")
+        with gr.Column(elem_id="mg-answer"):
+            with gr.Row(equal_height=False):
+                with gr.Column(scale=3, min_width=280):
+                    answer = gr.HTML(ui.empty_html(), elem_classes="mg-html")
+                with gr.Column(scale=2, min_width=220, visible=False) as media_col:
+                    out_media = gr.Image(elem_id="mg-media", show_label=False,
+                                         container=False, interactive=False,
+                                         height=320, buttons=["fullscreen"])
+        with gr.Accordion("Estado del sistema (health check, sin consulta real)",
+                          open=False):
+            health_btn = gr.Button("Ver estado", size="sm")
             health_out = gr.Code(label="/health", language="json")
             # api_name="health" lo publica en la API de Gradio: se llama sin
             # abrir la página (ver final/deploy/README.md, "Health check").
             health_btn.click(on_health, inputs=None, outputs=health_out,
                              api_name="health")
+        gr.HTML(ui.footer_html(), elem_classes="mg-html")
 
-        submit.click(on_submit, inputs=[target, obj], outputs=[out_text, out_media],
-                     api_name="recommend")
+        # La API `recommend` conserva su forma (texto, imagen) para quien la
+        # llama sin abrir la página; la pantalla usa su propio evento.
+        api_text = gr.Textbox(visible=False)
+        api_media = gr.Image(visible=False)
+        api_btn = gr.Button(visible=False)
+        api_btn.click(on_submit, inputs=[target, obj], outputs=[api_text, api_media],
+                      api_name="recommend")
+
+        obj.change(ui.class_note_html, inputs=obj, outputs=class_note, api_name=False)
+        submit.click(on_submit_screen, inputs=[target, obj],
+                     outputs=[answer, media_col, out_media], api_name=False)
 
     return demo, state, observer
+
+
+def launch_kwargs():
+    """Lo que `launch()` necesita para la cara de la app (Gradio 6 lo toma aquí)."""
+    import ui
+
+    return {"theme": ui.theme(), "css": ui.CSS, "head": ui.HEAD,
+            "allowed_paths": [str(DATASET_DIR)]}
 
 
 def main():  # pragma: no cover - solo en el Space/Colab con deps completas
@@ -531,7 +571,7 @@ def main():  # pragma: no cover - solo en el Space/Colab con deps completas
     share = os.environ.get("SHARE", "0") == "1"
     # `allowed_paths` deja que Gradio sirva los GIF del catálogo, que viven fuera
     # del directorio de trabajo cuando el repo se clona dentro del Space.
-    demo.launch(share=share, allowed_paths=[str(DATASET_DIR)])
+    demo.launch(share=share, **launch_kwargs())
 
 
 if __name__ == "__main__":  # pragma: no cover
