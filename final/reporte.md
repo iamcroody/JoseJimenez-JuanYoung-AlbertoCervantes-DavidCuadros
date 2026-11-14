@@ -448,10 +448,12 @@ corrida T4).
 ## Sustentación
 
 Las diapositivas están en `final/slides/slides/sustentacion-final/index.tsx`,
-hechas con open-slide: diez páginas en el orden que pide la asignación (el
-problema y el usuario, el sistema en un dibujo, la demo con sus tres casos, los
-números contra las líneas base y la técnica de eficiencia, lo que falla y el
-riesgo ético), con lo que se dice en cada una en sus notas de presentador. Para
+hechas con open-slide y con el mismo aspecto de nuestra presentación del M1: once
+páginas, diez en el orden que pide la asignación (el problema y el usuario, el
+sistema en un dibujo, la demo con sus tres casos, los números contra las líneas
+base y la técnica de eficiencia, lo que falla y el riesgo ético) y una de cierre
+para agradecer el curso, con lo que se dice en cada una en sus notas de
+presentador. Para
 verlas: `cd final/slides && npm install && npm run dev`, y abrir
 `http://localhost:5173/s/sustentacion-final` (la tecla F las pone en pantalla
 completa). La página de eficiencia queda marcada "pendiente" hasta la corrida T4.

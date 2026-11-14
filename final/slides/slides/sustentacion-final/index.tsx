@@ -139,8 +139,16 @@ const Background = ({ tone, cx, cy }: { tone: Tone; cx?: number; cy?: number }) 
     </>
   );
 
-const Footer = ({ tone }: { tone: Tone }) => {
+const PageCount = () => {
   const { current, total } = useSlidePageNumber();
+  return (
+    <span>
+      [ {String(current).padStart(2, '0')} / {String(total).padStart(2, '0')} ]
+    </span>
+  );
+};
+
+const Footer = ({ tone }: { tone: Tone }) => {
   const color = tone === 'dark' ? 'rgba(243, 240, 230, 0.38)' : '#8d8b82';
   return (
     <div
@@ -158,9 +166,7 @@ const Footer = ({ tone }: { tone: Tone }) => {
       }}
     >
       <span>MACGYVER GYM RAT</span>
-      <span>
-        [ {String(current).padStart(2, '0')} / {String(total).padStart(2, '0')} ]
-      </span>
+      <PageCount />
     </div>
   );
 };
@@ -431,7 +437,7 @@ const Cover: Page = () => (
     </div>
     <div style={{ position: 'absolute', right: PAD_X, bottom: 48, fontFamily: MONO, fontSize: 20,
       letterSpacing: '0.18em', color: 'rgba(243, 240, 230, 0.38)' }}>
-      [ 01 / 10 ]
+      <PageCount />
     </div>
   </div>
 );
@@ -777,30 +783,57 @@ const Protection = ({ text }: { text: string }) => (
 );
 
 const Ethics: Page = () => (
-  <Shell tone="dark" n="09" label="Ética y cierre" cx={1500} cy={470}>
-    <Mascot src={crocCool} alt="Croody con gafas" width={460} delay={200} style={{ right: PAD_X, top: 210 }} />
+  <Shell tone="dark" n="09" label="Ética" cx={1500} cy={560}>
     <h2 style={h2}>El peor error posible</h2>
-    <p style={{ fontSize: 54, fontWeight: 700, lineHeight: 1.25, margin: '40px 0 0', color: 'var(--osd-accent)',
-      maxWidth: 1100 }}>
-      "Cuélgate de la barra de la cortina."
-    </p>
-    <p style={{ ...lead('dark'), fontSize: 30, marginTop: 14 }}>
-      Lo dijo el modelo sin buscar, y el juez automático le puso 5 de 5.
-    </p>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 44 }}>
-      <Steps>
-        <Step><Protection text="La válvula: dice que no en vez de inventar" /></Step>
-        <Step><Protection text="La comprobación en el catálogo antes de mostrar" /></Step>
-        <Step><Protection text="El aviso: el sistema sugiere, tú decides" /></Step>
-        <Step><Protection text="Sin datos personales en los registros" /></Step>
-      </Steps>
+    <div style={{ display: 'flex', gap: 64, alignItems: 'flex-start', marginTop: 64 }}>
+      <div style={{ flex: 1 }}>
+        <Tag>Las protecciones</Tag>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 30, marginTop: 36 }}>
+          <Steps>
+            <Step><Protection text="La válvula: dice que no en vez de inventar" /></Step>
+            <Step><Protection text="La comprobación en el catálogo antes de mostrar" /></Step>
+            <Step><Protection text="El aviso: el sistema sugiere, tú decides" /></Step>
+            <Step><Protection text="Sin datos personales en los registros" /></Step>
+          </Steps>
+        </div>
+      </div>
+      <Card gold style={{ width: 660, flex: 'none', padding: '44px 52px' }}>
+        <div style={{ fontSize: 120, lineHeight: 0.7, fontWeight: 800, color: 'var(--osd-accent)' }}>"</div>
+        <p style={{ fontSize: 50, fontWeight: 700, lineHeight: 1.2, margin: '28px 0 0' }}>
+          Cuélgate de la barra de la cortina.
+        </p>
+        <p style={{ fontSize: 28, lineHeight: 1.45, color: MUTED_DARK, margin: '24px 0 0' }}>
+          Lo dijo el modelo sin buscar, y el juez automático le puso
+        </p>
+        <div style={{ fontFamily: MONO, fontSize: 64, fontWeight: 500, color: NEGATIVE, marginTop: 12 }}>5 / 5</div>
+      </Card>
     </div>
+  </Shell>
+);
+
+const Thanks: Page = () => (
+  <Shell tone="dark" n="10" label="Gracias" cx={1460} cy={520}>
+    <Mascot src={crocCool} alt="Croody con gafas" width={520} delay={250} style={{ right: PAD_X, top: 220 }} />
+    <h1 style={{ fontFamily: 'var(--osd-font-display)', fontSize: 150, fontWeight: 800, letterSpacing: '-0.035em',
+      lineHeight: 1, margin: '36px 0 0' }}>
+      Gracias
+      <br />
+      por el curso.
+    </h1>
+    <div style={{ fontFamily: MONO, fontSize: 36, color: 'var(--osd-accent)', marginTop: 44 }}>
+      ¿Preguntas?
+      <span className="mgr-anim" style={{ animation: 'mgr-blink 1.1s steps(1) infinite' }}>_</span>
+    </div>
+    <p style={{ ...lead('dark'), fontSize: 28, marginTop: 20 }}>
+      SI4006 · Tópicos especiales en IA · Universidad EAFIT
+    </p>
     <Terminal
-      style={{ marginTop: 48, width: 1100 }}
+      style={{ marginTop: 56, padding: '22px 32px' }}
       rows={[
         ['> enlaces', ''],
         ['demo', 'huggingface.co/spaces/jayoungh/macgyver-gym-rat', true],
         ['métricas', 'wandb.ai/jayoungh-me/macgyver-gym-rat-m5', true],
+        ['código', 'github.com/iamcroody/JoseJimenez-JuanYoung-AlbertoCervantes-DavidCuadros', true],
       ]}
     />
   </Shell>
@@ -822,6 +855,7 @@ export default [
   Efficiency,
   Fails,
   Ethics,
+  Thanks,
 ] satisfies Page[];
 
 export const notes: (string | undefined)[] = [
@@ -853,5 +887,7 @@ Leer la tabla con los números de la corrida T4 y decir si se cumplió el presup
 Responde poco: 7 de 49. Pero nunca inventa: 11 de 11 rechazos correctos y 0 ejercicios inventados.
 El arreglo es filtrar la búsqueda por la clase de equipo. (50 segundos)`,
   `El riesgo ético principal es una lesión. Contar el caso de la barra de cortina y que el juez le puso 5.
-Las cuatro protecciones. Cerrar con los enlaces del Space y de W&B. (50 segundos)`,
+Las cuatro protecciones, una por una. (50 segundos)`,
+  `Agradecer al profesor por el curso. Dejar en pantalla los enlaces del Space, de W&B y del repositorio,
+y abrir las preguntas. (20 segundos)`,
 ];
