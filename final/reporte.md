@@ -398,11 +398,17 @@ De la lectura honesta de M1/M2/M3:
 
 ## 9. Quién hizo qué
 
-<!-- TODO: el equipo confirma la especificidad de cada línea; no se inventan
+<!-- TODO: José, David y Alberto escriben su línea; no se inventan
      contribuciones individuales. -->
 
-- **Juan Andrés Young Hoyos:** TODO: confirmar aporte (punto de contacto con el
-  profesor; coordinación del repo y del submódulo del dataset).
+- **Juan Andrés Young Hoyos:** el despliegue del sistema final. Lo llevó a un Space
+  de Hugging Face con ZeroGPU cuando HF dejó de permitir Spaces en CPU, y resolvió
+  lo que ZeroGPU exigía (cargar el adaptador, calcular los embeddings del catálogo
+  aparte, buscar en la GPU, gastar poca cuota por petición). Conectó la
+  observabilidad en W&B (métricas por petición, tabla de peticiones, proyecto
+  público), rediseñó la pantalla alrededor de la comprobación en el catálogo y
+  midió en el despliegue los casos con imagen y cuánto rechaza el sistema. Además,
+  punto de contacto con el profesor.
 - **José Alejandro Jiménez Vásquez:** TODO: confirmar aporte.
 - **David Cuadros Mariño:** TODO: confirmar aporte.
 - **Alberto Daniel Cervantes Forero:** TODO: confirmar aporte.
