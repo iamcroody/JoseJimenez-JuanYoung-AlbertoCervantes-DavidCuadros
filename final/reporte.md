@@ -302,6 +302,20 @@ con qué pieza falló y qué se haría.
    muestra "no safe option"), pero el agente debería no proponer un ejercicio para un
    objeto inseguro de entrada.
 
+**Tipo D: visto en el despliegue (fuera del eval set).**
+
+8. **upper back con dos latas de comida, en el Space.** El sistema nombró
+   *dumbbell bent over row*, un ejercicio real de espalda alta y de la clase
+   `dumbbell`, con sus pasos reales y su GIF, y pasó el filtro de producción. Pero
+   la línea *Adaptation* dice "No equipment is needed for this one", que es la
+   plantilla de los ejercicios de **peso corporal**
+   (`ADAPTATION["body weight"]` en `scripts/macgyver.py`), mientras los pasos piden
+   una mancuerna en cada mano. *Pieza:* el generador mezcló la plantilla de otra
+   clase de equipo; el filtro no lo atrapa porque solo verifica el ejercicio, el
+   músculo y la clase, no la adaptación. *Arreglo:* esa línea sale de una plantilla
+   fija por clase, así que la app puede reemplazarla por la de la clase del
+   ejercicio ya verificado y el objeto que eligió el usuario.
+
 **Transversal: el agente elige la clase de equipo equivocada.** En 7 de 9
 llamadas pidió `body weight` (incluido forearms con botellas, que necesita
 `dumbbell`), así que la herramienta devolvió ejercicios que el usuario no puede
@@ -313,10 +327,31 @@ a ser el único que puede decir "no existe" con certeza (lo hizo en adv01).
 
 De la lectura honesta de M1/M2/M3:
 
-- **Rechazo débil.** El modelo afinado prácticamente no rechaza por sí solo: 0
-  rechazos en 154 ejemplos de test en M1, y en M3 depende de la válvula del prompt.
-  Por eso el sistema de producción no confía en el modelo para esto: el **filtro de
-  producción** resuelve contra el catálogo antes de mostrar.
+- **El modelo solo casi no rechaza; el sistema desplegado rechaza de más.** El
+  LoRA de M1, sin RAG, dio 0 rechazos en 154 ejemplos de test. En el despliegue el
+  problema se invierte. Sondeamos el sistema servido (RAG avanzado + filtro de
+  producción, `final/deploy/demo_probe.py`) con 12 músculos x 5 objetos, fuera del
+  eval set (`reports/demo_probe_final.csv`), y cruzamos cada combinación con el
+  catálogo alcanzable:
+
+  | De 60 combinaciones | Resultado |
+  | --- | ---: |
+  | El catálogo tiene respuesta y el sistema la dio | 7 de 49 (14%) |
+  | El catálogo tiene respuesta y el sistema rechazó | 42 de 49 |
+  | El catálogo no tiene respuesta y el sistema rechazó | **11 de 11** |
+  | El sistema mostró un ejercicio inventado o que no aplica | **0** |
+
+  Por clase de equipo, respondió 6 de 22 con `dumbbell`, 1 de 12 con peso
+  corporal, 0 de 8 con `kettlebell` (un balde) y 0 de 7 con `weighted` (una
+  mochila). Es decir: cuando el sistema muestra algo, es un ejercicio real que el
+  usuario puede hacer con su objeto, y nunca muestra algo cuando no hay respuesta;
+  pero falla en ayudar en la mayoría de los casos que sí la tienen. Lo causan dos
+  piezas, y el log JSON muestra las dos (`valve_fired` contra `passed_filter`): el
+  prompt v2a, que ya sobre-rechazaba en validación (75% de answerables
+  respondidos), y el filtro, que reemplaza por "no safe option" toda respuesta que
+  no verifica. Preferimos este error al contrario (inventar), pero el usuario lo
+  vive como "el sistema no sabe"; los arreglos del análisis de errores (filtrar la
+  recuperación por la clase de equipo del objeto) atacan justo esto.
 - **El juez de 1.5B tiene sesgo medido.** Su veredicto por pares se voltea en el
   **50%** de los pares (sesgo de posición), y al rellenar una respuesta con relleno
   sin contenido adv03 pasó de **1 a 5** (sesgo de longitud). Por eso el equipo

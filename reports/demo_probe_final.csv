@@ -1,0 +1,61 @@
+muscle,object,equipment_class,outcome,exercise,latency_s
+biceps,two filled water bottles,dumbbell,recommended,dumbbell hammer curl v. 2,7.2
+biceps,a bucket with a handle,kettlebell,refused,,6.4
+biceps,a backpack loaded with books,weighted,refused,,6.3
+biceps,nothing at all,body weight,refused,,6.2
+biceps,two full cans of food,dumbbell,recommended,dumbbell bicep curl with stork stance,6.6
+triceps,two filled water bottles,dumbbell,refused,,3.0
+triceps,a bucket with a handle,kettlebell,refused,,3.1
+triceps,a backpack loaded with books,weighted,refused,,5.0
+triceps,nothing at all,body weight,refused,,4.7
+triceps,two full cans of food,dumbbell,refused,,2.9
+delts,two filled water bottles,dumbbell,refused,,5.4
+delts,a bucket with a handle,kettlebell,refused,,3.4
+delts,a backpack loaded with books,weighted,refused,,5.4
+delts,nothing at all,body weight,refused,,5.1
+delts,two full cans of food,dumbbell,refused,,5.7
+pectorals,two filled water bottles,dumbbell,refused,,6.0
+pectorals,a bucket with a handle,kettlebell,refused,,6.3
+pectorals,a backpack loaded with books,weighted,refused,,5.8
+pectorals,nothing at all,body weight,refused,,5.2
+pectorals,two full cans of food,dumbbell,refused,,5.4
+abs,two filled water bottles,dumbbell,refused,,2.9
+abs,a bucket with a handle,kettlebell,refused,,5.6
+abs,a backpack loaded with books,weighted,refused,,5.2
+abs,nothing at all,body weight,refused,,3.4
+abs,two full cans of food,dumbbell,refused,,3.1
+quads,two filled water bottles,dumbbell,refused,,6.5
+quads,a bucket with a handle,kettlebell,refused,,7.1
+quads,a backpack loaded with books,weighted,refused,,5.3
+quads,nothing at all,body weight,refused,,4.6
+quads,two full cans of food,dumbbell,refused,,5.0
+glutes,two filled water bottles,dumbbell,recommended,dumbbell single leg deadlift,6.0
+glutes,a bucket with a handle,kettlebell,refused,,5.6
+glutes,a backpack loaded with books,weighted,refused,,5.6
+glutes,nothing at all,body weight,refused,,4.0
+glutes,two full cans of food,dumbbell,recommended,dumbbell single leg deadlift,6.1
+hamstrings,two filled water bottles,dumbbell,refused,,3.6
+hamstrings,a bucket with a handle,kettlebell,refused,,4.2
+hamstrings,a backpack loaded with books,weighted,refused,,4.5
+hamstrings,nothing at all,body weight,refused,,4.8
+hamstrings,two full cans of food,dumbbell,refused,,3.5
+calves,two filled water bottles,dumbbell,refused,,5.5
+calves,a bucket with a handle,kettlebell,refused,,3.2
+calves,a backpack loaded with books,weighted,refused,,5.1
+calves,nothing at all,body weight,refused,,3.3
+calves,two full cans of food,dumbbell,refused,,5.6
+upper back,two filled water bottles,dumbbell,recommended,dumbbell reverse grip row (female),5.6
+upper back,a bucket with a handle,kettlebell,refused,,5.0
+upper back,a backpack loaded with books,weighted,refused,,5.4
+upper back,nothing at all,body weight,refused,,5.2
+upper back,two full cans of food,dumbbell,recommended,dumbbell bent over row,5.6
+lats,two filled water bottles,dumbbell,refused,,5.9
+lats,a bucket with a handle,kettlebell,refused,,3.2
+lats,a backpack loaded with books,weighted,refused,,3.2
+lats,nothing at all,body weight,recommended,standing lateral stretch,4.7
+lats,two full cans of food,dumbbell,refused,,3.6
+forearms,two filled water bottles,dumbbell,refused,,6.7
+forearms,a bucket with a handle,kettlebell,refused,,6.0
+forearms,a backpack loaded with books,weighted,refused,,3.3
+forearms,nothing at all,body weight,refused,,5.7
+forearms,two full cans of food,dumbbell,refused,,3.6
