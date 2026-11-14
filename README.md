@@ -12,9 +12,9 @@ quantizes the generator for efficiency and ships it as a public Gradio Space wit
 component, a production safety filter, a health check, JSON logging and W&B observability
 (see [M5 - Final (eficiencia + despliegue)](#m5---final-eficiencia--despliegue-si4006)).
 
-- **Live demo (HF Spaces):** TODO, paste the public Space URL here after the first deploy
-  (`https://huggingface.co/spaces/<org>/macgyver-gym-rat`). It is a placeholder on purpose:
-  the deploy code reads URLs from the environment and no URL is invented.
+- **Live demo (HF Spaces, ZeroGPU):** <https://huggingface.co/spaces/jayoungh/macgyver-gym-rat>. Pick a muscle and an object from the
+  lists. Signing in to Hugging Face first gives you a larger daily GPU quota (5 minutes a
+  day for a free account, 2 without signing in; one request uses about 10 seconds).
 - **W&B project:** TODO, paste the project link here after the first run with `WANDB_API_KEY`
   set (`https://wandb.ai/<entity>/macgyver-gym-rat-m5`). Without the key, W&B is a silent
   no-op and the app still runs.

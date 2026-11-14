@@ -4,9 +4,9 @@
 > ejecutadas y comiteadas en `reports/*.csv` / `reports/*.json`, de `docs/*.md` o
 > de las tablas del `README.md` raíz. Las únicas cifras pendientes son las que
 > solo puede producir una GPU: la tabla antes/después de eficiencia (fila
-> "Sistema final"), el veredicto del presupuesto de pérdida, la URL del Space en
-> vivo y el enlace de W&B. Esas van marcadas como TODO o "por completar (corrida
-> T4)" y NO se inventan. Al final de este reporte hay una nota que separa qué
+> "Sistema final"), el veredicto del presupuesto de pérdida y el enlace de W&B.
+> Esas van marcadas como TODO o "por completar (corrida T4)" y NO se inventan.
+> El Space está en vivo: <https://huggingface.co/spaces/jayoungh/macgyver-gym-rat>. Al final de este reporte hay una nota que separa qué
 > salió de una corrida ejecutada y qué espera la corrida T4 del Módulo 5.
 >
 > Mismo eval set (`eval/eval_set.json`, 14 casos, 4 adversariales) y mismo
@@ -427,6 +427,6 @@ inventados):**
   `reports/efficiency_m5.csv`.
 - La tabla antes/después de eficiencia y el veredicto del presupuesto de pérdida:
   `final/efficiency/RESULTS.md`.
-- La URL del Space en vivo y el enlace del proyecto W&B: se pegan tras el deploy
+- El enlace del proyecto W&B: se pega cuando el Space tenga `WANDB_API_KEY`
   (`final/deploy/README.md`).
 - El enlace a las diapositivas de la sustentación.

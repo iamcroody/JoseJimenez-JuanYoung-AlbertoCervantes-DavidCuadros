@@ -13,16 +13,16 @@ No reimplementa nada: reutiliza el pipeline M3 (`m3/rag.py`, `m3/systems.py`,
 para el filtro, y el generador int4 de la feature de eficiencia
 (`final/efficiency/efficiency.py`) por la ruta cuantizada.
 
-## Enlaces (los llena el equipo tras el primer deploy)
+## Enlaces
 
-- **Space en vivo:** TODO: pegar aquí la URL pública tras desplegar
-  (`https://huggingface.co/spaces/<org>/macgyver-gym-rat`).
+- **Space en vivo:** <https://huggingface.co/spaces/jayoungh/macgyver-gym-rat> (ZeroGPU, sirve la rama o el commit de
+  `REPO_REF`).
 - **Proyecto W&B:** TODO: pegar aquí el enlace del proyecto tras la primera
   corrida con `WANDB_API_KEY` configurada
   (`https://wandb.ai/<entidad>/macgyver-gym-rat-m5`).
 
-Son **placeholders** a propósito: el código los lee del entorno/secrets y no
-hay ninguna URL inventada.
+El enlace de W&B es un placeholder a propósito hasta que el Space tenga la
+clave: no hay ninguna URL inventada.
 
 ## Archivos
 
