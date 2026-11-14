@@ -224,7 +224,7 @@ THEME_VALUES = {
 
 
 def _scoped(css):
-    """Antepone `.gradio-container` a cada selector propio (.mg-*, #mg-*).
+    """Antepone el contenedor de Gradio a cada selector propio (.mg-*, #mg-*).
 
     Gradio pinta el texto de sus bloques HTML con reglas de "prose" que ganaban a
     las clases sueltas: en el Space los enlaces salían azules y subrayados y el
@@ -235,8 +235,10 @@ def _scoped(css):
 
     def fix(match):
         selectors = [s.strip() for s in match.group(1).split(",")]
-        scoped = [f".gradio-container {s}" if s.startswith((".mg", "#mg")) else s
-                  for s in selectors]
+        # La clase doble suma un nivel más: `.gradio-container-6-30-0 .prose a`
+        # empataba con `.gradio-container .mg-links a`, y ganaba por cargar después.
+        scoped = [f".gradio-container.gradio-container {s}"
+                  if s.startswith((".mg", "#mg")) else s for s in selectors]
         return ", ".join(scoped) + " {"
 
     return re.sub(r"(?m)^([^@{}\n][^{}\n]*)\{", fix, css)
