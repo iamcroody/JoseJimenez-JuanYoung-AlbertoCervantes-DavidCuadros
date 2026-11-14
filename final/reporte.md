@@ -4,9 +4,10 @@
 > ejecutadas y comiteadas en `reports/*.csv` / `reports/*.json`, de `docs/*.md` o
 > de las tablas del `README.md` raíz. Las únicas cifras pendientes son las que
 > solo puede producir una GPU: la tabla antes/después de eficiencia (fila
-> "Sistema final"), el veredicto del presupuesto de pérdida, la URL del Space en
-> vivo y el enlace de W&B. Esas van marcadas como TODO o "por completar (corrida
-> T4)" y NO se inventan. Al final de este reporte hay una nota que separa qué
+> "Sistema final") y el veredicto del presupuesto de pérdida. Esas van marcadas
+> como TODO o "por completar (corrida T4)" y NO se inventan. Las peticiones del
+> Space quedan en W&B: <https://wandb.ai/jayoungh-me/macgyver-gym-rat-m5>.
+> El Space está en vivo: <https://huggingface.co/spaces/jayoungh/macgyver-gym-rat>. Al final de este reporte hay una nota que separa qué
 > salió de una corrida ejecutada y qué espera la corrida T4 del Módulo 5.
 >
 > Mismo eval set (`eval/eval_set.json`, 14 casos, 4 adversariales) y mismo
@@ -65,10 +66,9 @@ flowchart LR
     D --> F
     F -->|pool of 20| R{{cross-encoder<br/>rerank<br/>M3}}
     R -->|top-k=8| P[augmented prompt v2a<br/>+ escape valve<br/>M3]
-    P --> G[M1 LoRA Qwen3-1.7B<br/>int4 nf4 generator<br/>M5 efficiency]
-    G -->|proposes JSON| T[[find_exercises<br/>target, equipment<br/>M3 agent]]
-    T -->|results or<br/>'none exist'| G
+    P --> G[M1 LoRA Qwen3-1.7B<br/>bf16 en el Space, int4 en la<br/>versión eficiente M5]
     G --> VF{{production filter:<br/>harness.domain_check<br/>M5 deploy}}
+    G -.->|medido en M3,<br/>fuera del despliegue| T[[agente + find_exercises<br/>M3 sistema_final]]
     VF -->|passes| O[answer + catalog<br/>image/GIF<br/>M5 visual]
     VF -->|fails| N['No safe option'<br/>M5 deploy]
     O --> L[/JSON log + W&B<br/>no PII<br/>M5 deploy/]
@@ -76,15 +76,20 @@ flowchart LR
     HC{{health check:<br/>models + index<br/>M5 deploy}}
 ```
 
-**Cómo leerlo.** La ruta M3 (azul conceptual: ingest, índices, HyDE, RRF,
-rerank, prompt v2a con válvula, herramienta `find_exercises`) es la del sistema
-avanzado/agente que M3 ya mide. M5 agrega dos cosas alrededor del generador: lo
-carga en **int4 (nf4)** para abaratar la pieza más lenta (eficiencia), y envuelve
-la salida con el **filtro de producción**, el **componente visual** (imagen/GIF
-del catálogo), el **health check**, el **logging JSON sin PII** y la
-**observabilidad W&B** (despliegue). El sistema naive es la misma ruta sin HyDE,
-sin BM25, sin rerank y sin herramienta. Ver el diagrama y el detalle de cada
-pieza en `README.md` (secciones M3 y M5).
+**Cómo leerlo.** La ruta continua es lo que corre en el Space: el RAG avanzado
+de M3 (`sistema_rag_avanzado`: ingest, índices, HyDE, RRF, rerank, prompt v2a con
+válvula). La flecha punteada es el agente de M3 con la herramienta
+`find_exercises` (`sistema_final`): está en el repo y medido, pero **no se
+despliega**; la sección 3 dice por qué. M5 agrega alrededor del generador la
+técnica de eficiencia (**int4 (nf4)**, medida en el T4 y disponible en el
+respaldo con `QUANTIZED=1`; el Space usa bf16) y envuelve la salida con el
+**filtro de producción**, el **componente visual** (imagen/GIF del catálogo), el
+**health check**, el **logging JSON sin PII** y la **observabilidad W&B**. En el
+Space la búsqueda densa es exacta, un producto de matrices en la GPU sobre los
+mismos vectores que el índice de Chroma, porque Chroma no funciona dentro de los
+procesos de ZeroGPU (`final/deploy/README.md`); su top 8 coincide con el de M3 en
+los 14 casos del eval set. El sistema naive es la misma ruta sin HyDE, sin BM25 y
+sin rerank. Ver el detalle de cada pieza en `README.md` (secciones M3 y M5).
 
 ## 3. Decisiones técnicas (con alternativas descartadas)
 
@@ -115,6 +120,34 @@ Resumen; el detalle con las mediciones está en `docs/RESULTS_REPORT.md`,
   sin cualquiera de los dos, la dimensión 3 cae de 42.9% a 14.3%. El híbrido podría
   quitarse para ahorrar ~0.5 s sin pérdida medida. Se mantiene porque es barato y
   es la técnica estándar del laboratorio, pero el reporte lo dice tal cual.
+
+**Agente con herramienta (M3): medido, y fuera del despliegue.**
+- *Lo que se despliega:* el RAG avanzado de M3 (`sistema_rag_avanzado`), sin el
+  agente. Por eso el log JSON de cada petición nunca trae `tool` en
+  `components_used`: no es un componente apagado por error, es la decisión.
+- *Por qué:* en la tabla de M3 (`reports/scorecard_m3.csv`,
+  `reports/latency_m3.csv`) el agente empeora todo lo que importa para el
+  usuario:
+
+  | Sistema | Dimensión 3 (dominio) | Adversariales | Latencia mediana (T4) |
+  | --- | ---: | ---: | ---: |
+  | RAG avanzado (desplegado) | **42.9%** | **75%** | **15.2 s** |
+  | RAG avanzado + agente | 28.6% | 50% | 38.9 s |
+
+  El agente eligió la clase de equipo equivocada en 7 de sus 9 llamadas (pidió
+  `body weight` también para dos botellas de agua, que son `dumbbell`), llamó la
+  herramienta en 5 casos que no la necesitaban, y repitió la misma llamada en vez
+  de leer el resultado. Perdió dos casos que el avanzado acertaba (upper back y
+  la barra de cortina, adv04). En ZeroGPU, además, cada petición gasta la cuota
+  diaria de quien usa la demo, y el agente tarda unas 2.5 veces más por
+  pregunta (38.9 s contra 15.2 s en el T4).
+- *Lo que se pierde:* el agente es la única pieza que puede decir "no existe"
+  con certeza, y lo hizo en adv01 (dorsales con dos latas). En el despliegue esa
+  función la cubren la válvula del prompt y el **filtro de producción**, que
+  resuelve cada recomendación contra el catálogo antes de mostrarla.
+- *Lo que haría falta para volver a ponerlo:* mapear el objeto a su clase de
+  equipo sin preguntarle al 1.7B y saltar el paso de decisión cuando el top 8 ya
+  trae un ejercicio válido (ver la lectura honesta de M3 en el `README.md`).
 
 **Patrón visual (M4): imagen/GIF del catálogo, no imagen generada.**
 - *Alternativa descartada:* generar una imagen con un modelo de visión, o mover
@@ -153,17 +186,21 @@ mediana (p50) de reloj en la misma máquina (Colab T4). Fuentes:
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Línea base del Módulo 2 (sin RAG) | 0.787 | 4.714 | 21.4% | 0 (sin componente visual) | 7.9 s |
 | Sistema del Módulo 3 (RAG avanzado) | 0.705 | 2.429 | **42.9%** | 0 (sin componente visual) | 15.2 s |
-| Sistema del Módulo 4 (visual) | 0.705 | 2.429 | **42.9%** | hasta 14 (GIF del catálogo cuando hay recomendación) | ~15.2 s |
-| Sistema final (eficiente + desplegado, int4) | por completar (corrida T4) | por completar (corrida T4) | por completar (corrida T4) | hasta 14 (GIF del catálogo) | por completar (corrida T4) |
+| Sistema del Módulo 4 (visual) | 0.705 | 2.429 | **42.9%** | **3 de 14** | ~15.2 s |
+| Sistema final (eficiente + desplegado, int4) | por completar (corrida T4) | por completar (corrida T4) | por completar (corrida T4) | por completar (corrida T4) | por completar (corrida T4) |
 
 **Notas de la tabla (honestas).**
 - La fila M4 (visual) **no cambia los números del harness**: el componente visual
   es una capa de presentación (muestra el GIF del catálogo del ejercicio que el
   sistema M3 ya recomienda), no toca la generación ni la recuperación, así que las
   tres dimensiones y la latencia son las de la fila M3. Lo que cambia es "casos con
-  imagen": el Space muestra el GIF del catálogo siempre que el sistema recomienda
-  un ejercicio (y pasa el filtro); en los rechazos no hay imagen. El número exacto
-  por corrida se registra en el log JSON (`components_used` incluye `vision`).
+  imagen": el sistema muestra el GIF del catálogo solo cuando recomienda un
+  ejercicio y pasa el filtro; en los rechazos no hay imagen. Lo medimos con los 14
+  casos por el camino desplegado (`final/deploy/demo_probe.py --eval`,
+  `reports/image_cases_final.csv`): **3 de 14** muestran imagen (upper back, abs y
+  levator scapulae), los mismos 3 aciertos de M3 en los casos con respuesta. Los
+  4 adversariales no muestran imagen, que es lo correcto. En producción cada
+  petición lo registra en el log JSON (`components_used` incluye `vision`).
 - La fila **Sistema final** se mide sobre `sistema_rag_avanzado` cargado con el
   generador int4 en `notebooks/M5_efficiency.ipynb`. Sus celdas quedan en blanco a
   propósito hasta la corrida T4; el notebook escribe `reports/efficiency_m5.csv` y
@@ -270,6 +307,20 @@ con qué pieza falló y qué se haría.
    muestra "no safe option"), pero el agente debería no proponer un ejercicio para un
    objeto inseguro de entrada.
 
+**Tipo D: visto en el despliegue (fuera del eval set).**
+
+8. **upper back con dos latas de comida, en el Space.** El sistema nombró
+   *dumbbell bent over row*, un ejercicio real de espalda alta y de la clase
+   `dumbbell`, con sus pasos reales y su GIF, y pasó el filtro de producción. Pero
+   la línea *Adaptation* dice "No equipment is needed for this one", que es la
+   plantilla de los ejercicios de **peso corporal**
+   (`ADAPTATION["body weight"]` en `scripts/macgyver.py`), mientras los pasos piden
+   una mancuerna en cada mano. *Pieza:* el generador mezcló la plantilla de otra
+   clase de equipo; el filtro no lo atrapa porque solo verifica el ejercicio, el
+   músculo y la clase, no la adaptación. *Arreglo:* esa línea sale de una plantilla
+   fija por clase, así que la app puede reemplazarla por la de la clase del
+   ejercicio ya verificado y el objeto que eligió el usuario.
+
 **Transversal: el agente elige la clase de equipo equivocada.** En 7 de 9
 llamadas pidió `body weight` (incluido forearms con botellas, que necesita
 `dumbbell`), así que la herramienta devolvió ejercicios que el usuario no puede
@@ -281,10 +332,31 @@ a ser el único que puede decir "no existe" con certeza (lo hizo en adv01).
 
 De la lectura honesta de M1/M2/M3:
 
-- **Rechazo débil.** El modelo afinado prácticamente no rechaza por sí solo: 0
-  rechazos en 154 ejemplos de test en M1, y en M3 depende de la válvula del prompt.
-  Por eso el sistema de producción no confía en el modelo para esto: el **filtro de
-  producción** resuelve contra el catálogo antes de mostrar.
+- **El modelo solo casi no rechaza; el sistema desplegado rechaza de más.** El
+  LoRA de M1, sin RAG, dio 0 rechazos en 154 ejemplos de test. En el despliegue el
+  problema se invierte. Sondeamos el sistema servido (RAG avanzado + filtro de
+  producción, `final/deploy/demo_probe.py`) con 12 músculos x 5 objetos, fuera del
+  eval set (`reports/demo_probe_final.csv`), y cruzamos cada combinación con el
+  catálogo alcanzable:
+
+  | De 60 combinaciones | Resultado |
+  | --- | ---: |
+  | El catálogo tiene respuesta y el sistema la dio | 7 de 49 (14%) |
+  | El catálogo tiene respuesta y el sistema rechazó | 42 de 49 |
+  | El catálogo no tiene respuesta y el sistema rechazó | **11 de 11** |
+  | El sistema mostró un ejercicio inventado o que no aplica | **0** |
+
+  Por clase de equipo, respondió 6 de 22 con `dumbbell`, 1 de 12 con peso
+  corporal, 0 de 8 con `kettlebell` (un balde) y 0 de 7 con `weighted` (una
+  mochila). Es decir: cuando el sistema muestra algo, es un ejercicio real que el
+  usuario puede hacer con su objeto, y nunca muestra algo cuando no hay respuesta;
+  pero falla en ayudar en la mayoría de los casos que sí la tienen. Lo causan dos
+  piezas, y el log JSON muestra las dos (`valve_fired` contra `passed_filter`): el
+  prompt v2a, que ya sobre-rechazaba en validación (75% de answerables
+  respondidos), y el filtro, que reemplaza por "no safe option" toda respuesta que
+  no verifica. Preferimos este error al contrario (inventar), pero el usuario lo
+  vive como "el sistema no sabe"; los arreglos del análisis de errores (filtrar la
+  recuperación por la clase de equipo del objeto) atacan justo esto.
 - **El juez de 1.5B tiene sesgo medido.** Su veredicto por pares se voltea en el
   **50%** de los pares (sesgo de posición), y al rellenar una respuesta con relleno
   sin contenido adv03 pasó de **1 a 5** (sesgo de longitud). Por eso el equipo
@@ -326,11 +398,21 @@ De la lectura honesta de M1/M2/M3:
 
 ## 9. Quién hizo qué
 
-<!-- TODO: el equipo confirma la especificidad de cada línea; no se inventan
+<!-- TODO: José, David y Alberto escriben su línea; no se inventan
      contribuciones individuales. -->
 
-- **Juan Andrés Young Hoyos:** TODO: confirmar aporte (punto de contacto con el
-  profesor; coordinación del repo y del submódulo del dataset).
+- **Juan Andrés Young Hoyos:** monté la base del proyecto: el fork del catálogo
+  como submódulo fijo, el entorno con uv y la prueba en un T4 gratuito con la que
+  elegimos Qwen3-1.7B. En M1 llevé la tarea a código: el script que genera el
+  dataset desde el catálogo, el evaluador que califica contra el catálogo y no
+  contra una respuesta fija, la línea base zero-shot y el script de LoRA. En M2
+  corregí la dimensión 3 del harness para que califique contra el catálogo
+  alcanzable, arreglé las sondas de sesgo y llené el scorecard; en M3 ajusté la
+  entrega (dependencias y README). En el final hice el despliegue: llevé la app a
+  un Space con ZeroGPU cuando HF dejó de permitir Spaces en CPU y resolví lo que
+  ZeroGPU exigía, conecté W&B, rediseñé la pantalla alrededor de la comprobación en
+  el catálogo y medí en el despliegue los casos con imagen y cuánto rechaza el
+  sistema. Fui el punto de contacto con el profesor.
 - **José Alejandro Jiménez Vásquez:** TODO: confirmar aporte.
 - **David Cuadros Mariño:** TODO: confirmar aporte.
 - **Alberto Daniel Cervantes Forero:** TODO: confirmar aporte.
@@ -348,6 +430,10 @@ De la lectura honesta de M1/M2/M3:
   asignación, recomputar las cifras del README desde `reports/` y redactar este
   reporte y las ediciones de portada, manteniendo cada cifra trazable a una corrida
   ejecutada o marcada como placeholder de la corrida T4.
+- **Diapositivas:** la estructura y el contenido de la sustentación los planeamos
+  nosotros. Con open-slide, y Claude Code escribiendo las páginas, pudimos
+  organizarlo mejor en una presentación: cada idea en su página, el aspecto de
+  nuestra presentación del M1 y las animaciones.
 - Los modelos dentro del sistema (el LoRA de M1 sobre Qwen3-1.7B como generador,
   Qwen2.5-1.5B y Qwen2.5-3B como jueces, bge-small-en-v1.5 y MiniLM como embeddings,
   el reranker cross-encoder) están descritos arriba y no son parte de esta
@@ -365,10 +451,17 @@ corrida T4).
 
 ## Sustentación
 
-Las diapositivas de la sustentación viven en `final/` o se enlazan desde aquí:
-TODO: pegar el enlace a las diapositivas (no se crean en esta entrega). La
-sustentación es a más tardar el lunes 23 de noviembre, máximo 10 minutos, con tres
-casos en la demo en vivo (un acierto, un rechazo honesto y un adversarial).
+Las diapositivas están en `final/slides/slides/sustentacion-final/index.tsx`,
+hechas con open-slide y con el mismo aspecto de nuestra presentación del M1: once
+páginas, diez en el orden que pide la asignación (el problema y el usuario, el
+sistema en un dibujo, la demo con sus tres casos, los números contra las líneas
+base y la técnica de eficiencia, lo que falla y el riesgo ético) y una de cierre
+para agradecer el curso, con lo que se dice en cada una en sus notas de
+presentador. Para
+verlas: `cd final/slides && npm install && npm run dev`, y abrir
+`http://localhost:5173/s/sustentacion-final` (la tecla F las pone en pantalla
+completa). La página de eficiencia queda marcada "pendiente" hasta la corrida T4.
+La sustentación es a más tardar el lunes 23 de noviembre, máximo 10 minutos.
 
 ## Números en este reporte
 
@@ -395,6 +488,3 @@ inventados):**
   `reports/efficiency_m5.csv`.
 - La tabla antes/después de eficiencia y el veredicto del presupuesto de pérdida:
   `final/efficiency/RESULTS.md`.
-- La URL del Space en vivo y el enlace del proyecto W&B: se pegan tras el deploy
-  (`final/deploy/README.md`).
-- El enlace a las diapositivas de la sustentación.

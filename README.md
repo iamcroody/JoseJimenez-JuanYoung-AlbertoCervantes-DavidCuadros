@@ -12,12 +12,13 @@ quantizes the generator for efficiency and ships it as a public Gradio Space wit
 component, a production safety filter, a health check, JSON logging and W&B observability
 (see [M5 - Final (eficiencia + despliegue)](#m5---final-eficiencia--despliegue-si4006)).
 
-- **Live demo (HF Spaces):** TODO, paste the public Space URL here after the first deploy
-  (`https://huggingface.co/spaces/<org>/macgyver-gym-rat`). It is a placeholder on purpose:
-  the deploy code reads URLs from the environment and no URL is invented.
-- **W&B project:** TODO, paste the project link here after the first run with `WANDB_API_KEY`
-  set (`https://wandb.ai/<entity>/macgyver-gym-rat-m5`). Without the key, W&B is a silent
-  no-op and the app still runs.
+- **Live demo (HF Spaces, ZeroGPU):** <https://huggingface.co/spaces/jayoungh/macgyver-gym-rat>. Pick a muscle and an object from the
+  lists. Signing in to Hugging Face first gives you a larger daily GPU quota (5 minutes a
+  day for a free account, 2 without signing in; one request uses about 10 seconds).
+- **W&B project:** <https://wandb.ai/jayoungh-me/macgyver-gym-rat-m5>. Each run is one start of the Space, named after its start time
+  and commit; the charts show latency per request and its median, recommendations against
+  refusals and filter blocks, and how often each component ran. Without `WANDB_API_KEY`,
+  W&B is a silent no-op and the app still runs.
 - **Final report:** [`final/reporte.md`](final/reporte.md) covers the problem, the system
   diagram, the justified decisions, the evolutionary table, the ablation, the error analysis,
   the limitations, the ethics questions and who did what.
@@ -922,7 +923,13 @@ discarded alternatives (int8, distillation, a smaller-model LoRA).
 ### Deployment: public Gradio Space
 
 A Gradio app ([`final/deploy/`](final/deploy/README.md)) runs the MacGyver Gym Rat system end
-to end and adds the production pieces the rubric asks for:
+to end. Free Hugging Face accounts can no longer create CPU Gradio Spaces, so, as the
+professor allowed, it runs on a **ZeroGPU Space**, where a GPU is lent only while a request
+runs. The backup is the same `app.py` on a Colab T4 or a laptop with a public Gradio link
+(`SHARE=1`). The Space serves the M3 advanced RAG with the generator in bf16; the int4
+technique is measured on the T4 and can be shown live on the backup (`QUANTIZED=1`). The
+deploy README says exactly what runs where. The app adds the production pieces the rubric
+asks for:
 
 - **Visual component.** Shows the catalog image/GIF of the recommended exercise (not an
   AI-generated image), satisfying the M4 visual requirement. The UI makes clear the system
@@ -933,7 +940,8 @@ to end and adds the production pieces the rubric asks for:
   duplicated). If it does not pass, the app shows a "no safe option" message instead of an
   unverified recommendation.
 - **Health check.** `health_check(state)` reports liveness (generator and embedder loaded,
-  Chroma index responds) with no real query.
+  Chroma index responds) with no real query. It is a button in the UI and the `health`
+  API endpoint, callable with `curl` (command in the deploy README).
 - **JSON logging, no PII.** One JSON Lines record per request: timestamp, latency, which
   components ran (rag/rerank/hyde/tool/vision), whether the valve fired, whether the filter
   passed. Only the muscle (catalog vocabulary) and the object's equipment *class* are logged,

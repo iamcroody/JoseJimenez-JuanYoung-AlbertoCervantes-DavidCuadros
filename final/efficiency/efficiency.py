@@ -47,7 +47,7 @@ from pathlib import Path
 # y m3/ se agregan a sys.path igual que en notebooks/M3_rag.ipynb. Replicamos esa
 # resolución para que `import macgyver`/`import harness` funcione igual aquí.
 ROOT = Path(__file__).resolve().parents[2]
-for _sub in ("scripts", "eval", "m3"):
+for _sub in ("scripts", "eval", "m3"):  # m3/ para `import rag` en build_retriever
     _path = str(ROOT / _sub)
     if _path not in sys.path:
         sys.path.insert(0, _path)
@@ -59,6 +59,23 @@ import harness as H  # noqa: E402
 # reproducen sin reentrenar. Es el mismo que usan scripts/03_eval_zeroshot.py y
 # la celda de M3_rag.ipynb.
 ADAPTER = "models/r16-all-linear"
+
+# El retriever que midió la corrida final de M3 (README, sección M3, "Corpus and
+# the three decisions"; notebooks/M3_rag.ipynb). Viven aquí, y no repetidos en
+# cada archivo, para que la app desplegada y la fila "antes" del notebook M5
+# sirvan el mismo sistema que reporta reports/scorecard_m3.csv.
+EMBED_MODEL = "BAAI/bge-small-en-v1.5"
+TOP_K = 8
+POOL = 20
+
+
+def build_retriever(docs, device=None):
+    """El retriever de M3 tal como se midió: bge-small, rerank sobre 20, top 8."""
+    import rag as R
+
+    dense = R.DenseIndex(docs, EMBED_MODEL, device=device)
+    return R.Retriever(docs, dense, reranker=R.load_reranker(device=device),
+                       k=TOP_K, pool=POOL)
 
 
 def build_4bit_config(compute_dtype=None):

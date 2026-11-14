@@ -250,15 +250,163 @@ def main():
                              passed_filter=True, recommended=True)
         observer.log_request(90.0, ["rag"], valve_fired=True,
                              passed_filter=False, recommended=False)
+        observer.log_request(95.0, ["rag"], valve_fired=False,
+                             passed_filter=False, recommended=False)
         check("observer counts recommendations and refusals",
               observer.counters["recommendations"] == 1
               and observer.counters["refusals"] == 1, observer.counters)
-        check("observer counts a filter block",
+        check("a filter block is counted, and a model refusal is not one",
               observer.counters["filter_blocks"] == 1, observer.counters)
         check("observer tallies component usage",
-              observer.component_counts["rag"] == 2
+              observer.component_counts["rag"] == 3
               and observer.component_counts["vision"] == 1, observer.component_counts)
         observer.finish()  # no-op seguro cuando está deshabilitado
+
+    print("ZeroGPU wiring and the M3 retriever settings")
+    check("without the spaces package the GPU decorator is a no-op",
+          app.spaces is None and app.run_advanced.__name__ == "run_advanced")
+    check("final/ is on sys.path so the efficiency module imports",
+          str(app.ROOT / "final") in sys.path)
+    from efficiency import efficiency as E
+    check("the app serves the retriever M3 measured (bge-small, top 8, pool 20)",
+          (E.EMBED_MODEL, E.TOP_K, E.POOL) == ("BAAI/bge-small-en-v1.5", 8, 20),
+          (E.EMBED_MODEL, E.TOP_K, E.POOL))
+
+    print("handle_request end to end with a fake system")
+
+    class FakeSystems:
+        @staticmethod
+        def sistema_rag_avanzado(prompt):
+            raise AssertionError("the injected run should be used, not this one")
+
+    class ServingState:
+        ready = True
+        techniques = ("hybrid", "rerank", "hyde")
+        systems = FakeSystems()
+        catalog_index = index
+        full_index = index
+
+    with mock.patch.dict("os.environ", {}, clear=True):
+        import wandb_utils as W
+
+        serving_observer = W.init_observer(project="test-proj")
+    seen = []
+
+    def fake_run(prompt):
+        seen.append(prompt)
+        return answer_reply
+
+    text, _media = app.handle_request(ServingState(), serving_observer, "biceps", obj,
+                                      run=fake_run)
+    check("handle_request sends the M1 prompt to the injected run",
+          seen == [mg.build_prompt("biceps", obj)])
+    check("a verified answer is shown as the model wrote it", text == answer_reply)
+
+    text_inv, media_inv = app.handle_request(ServingState(), serving_observer, "biceps",
+                                             obj, run=lambda prompt: invented)
+    check("an unverified answer is replaced by the valve message, with no image",
+          text_inv == app.VALVE_MESSAGE and media_inv is None)
+
+    print("health as JSON for the /health API endpoint")
+    import json
+
+    health = json.loads(app.health_json(NotReady()))
+    check("health_json is valid JSON and reports 'down' before loading",
+          health["status"] == "down", health["status"])
+
+    print("what the W&B observer sends (fake sink, no network)")
+    import wandb_utils as W
+
+    class FakeSink:
+        def __init__(self):
+            self.sent = []
+
+        def write(self, step, payload, row):
+            self.sent.append((step, payload, row))
+
+    sink = FakeSink()
+    sent_observer = W.WandbObserver(enabled=True, project="test", sink=sink)
+    sent_observer.log_request(100.0, ["rag", "vision"], False, True, True,
+                              muscle="biceps", object_category="dumbbell")
+    sent_observer.log_request(300.0, ["rag"], True, False, False,
+                              muscle="lats", object_category="dumbbell")
+    sent_observer.log_request(200.0, ["rag"], False, False, False,
+                              muscle="triceps", object_category="dumbbell")
+    check("one message per request, with its step", [s for s, _, _ in sink.sent] == [1, 2, 3])
+    last = sink.sent[2][1]
+    check("latency and its running median are sent under readable names",
+          last["latencia/por_peticion_ms"] == 200.0 and last["latencia/mediana_ms"] == 200.0
+          and last["peticion"] == 3, last)
+    check("usage counters split model refusals from filter blocks",
+          (last["uso/recomendaciones"], last["uso/rechazos_del_modelo"],
+           last["uso/bloqueos_del_filtro"]) == (1, 1, 1), last)
+    check("no 0/1 flag columns are sent as charts",
+          not any(k in last for k in ("valve_fired", "passed_filter", "recommended")))
+    check("the request row names the outcome in Spanish, with no free text",
+          [row[3] for _, _, row in sink.sent]
+          == ["recomendó", "rechazo del modelo", "bloqueo del filtro"]
+          and sink.sent[0][2][:3] == [1, "biceps", "dumbbell"], [r for _, _, r in sink.sent])
+    name = W.default_run_name()
+    check("runs get a readable name, not W&B's random one",
+          name.startswith(("Space", "Local")) and "UTC" in name, name)
+
+    print("what the screen shows in each state (ui.py, no gradio)")
+    import ui
+
+    ok_detail = {"exercise_real": True, "target_match": True, "equipment_match": True}
+    shown = ui.answer_html({"reply": answer_reply, "media_path": "x.gif", "refused": False,
+                            "passed": True, "detail": ok_detail}, "biceps", obj)
+    check("a verified answer shows the exercise, its steps and three passed checks",
+          "test biceps curl" in shown and "Curl the weight." in shown
+          and shown.count('class="ok"') == 3)
+    valve = ui.answer_html({"reply": valve_reply, "media_path": None, "refused": True,
+                            "passed": False, "detail": {}}, "lats", obj)
+    check("a valve refusal says so and invents nothing",
+          "No hay una opción segura" in valve and "<ol" not in valve)
+    blocked = ui.answer_html({"reply": wrong_muscle, "media_path": None, "refused": False,
+                              "passed": False, "detail": {"exercise_real": True,
+                                                          "target_match": False,
+                                                          "equipment_match": True}},
+                             "biceps", obj)
+    check("a filter block names the proposal and marks the check that failed",
+          "test air squat" in blocked and blocked.count('class="no"') == 1)
+    escaped = ui.answer_html({"reply": "Exercise: <script>x</script>\nSteps:\n1. a",
+                              "media_path": "x.gif", "refused": False, "passed": True,
+                              "detail": ok_detail}, "biceps", obj)
+    check("model text is escaped before it reaches the page", "<script>" not in escaped)
+    check("the object note names its equipment class in Spanish",
+          "mancuerna" in ui.class_note_html("two filled water bottles"))
+
+    readout = ui.health_html(health_mod.health_check(FakeState()))
+    check("the health readout says Listo in words when the check is ok",
+          'mg-pill ok' in readout and "Listo" in readout)
+    check("the health readout says Caído when models are not loaded",
+          "Caído" in ui.health_html(health_mod.health_check(NotReady())))
+
+    print("muscle choices come from the catalog")
+    muscles = app.catalog_muscles()
+    check("the muscle list uses the catalog's spelling",
+          "triceps" in muscles and "tricep" not in muscles and len(muscles) == 19,
+          len(muscles))
+
+    print("health on the ZeroGPU index (no compute in the main process)")
+
+    class CountingDense:
+        def count(self):
+            return 1324
+
+    class GpuState:
+        ready = True
+        quantized = False
+        systems = object()
+
+        class retriever:
+            dense = CountingDense()
+
+    gpu_status = health_mod.health_check(GpuState())
+    check("health_check is ok on an index that only reports its size",
+          gpu_status["status"] == "ok" and "1324" in gpu_status["checks"]["index"],
+          gpu_status["checks"]["index"])
 
     print("\nself-test", "PASSED" if not FAILURES else f"FAILED: {FAILURES}")
     if FAILURES:

@@ -1,0 +1,15 @@
+id,kind,outcome,exercise,image
+gold01-forearms,answerable,refused,,
+gold02-glutes,answerable,refused,,
+gold03-calves,answerable,refused,,
+gold04-upper-back,answerable,recommended,dumbbell reverse grip row (female),2327-Nh3mvOO.gif
+gold05-biceps,answerable,refused,,
+gold06-delts,answerable,refused,,
+gold07-abs,answerable,recommended,bodyweight incline side plank,3544-5VXmnV5.gif
+gold08-triceps,answerable,refused,,
+gold09-pectorals,answerable,refused,,
+gold10-levator-scapulae,answerable,recommended,neck side stretch,1403-x2chWLO.gif
+adv01-impossible-pair,must_refuse,refused,,
+adv02-false-premise,false_premise,refused,,
+adv03-out-of-domain,out_of_domain,refused,,
+adv04-unsafe-object,must_refuse,refused,,
