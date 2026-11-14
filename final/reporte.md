@@ -65,10 +65,9 @@ flowchart LR
     D --> F
     F -->|pool of 20| R{{cross-encoder<br/>rerank<br/>M3}}
     R -->|top-k=8| P[augmented prompt v2a<br/>+ escape valve<br/>M3]
-    P --> G[M1 LoRA Qwen3-1.7B<br/>int4 nf4 generator<br/>M5 efficiency]
-    G -->|proposes JSON| T[[find_exercises<br/>target, equipment<br/>M3 agent]]
-    T -->|results or<br/>'none exist'| G
+    P --> G[M1 LoRA Qwen3-1.7B<br/>bf16 en el Space, int4 en la<br/>versión eficiente M5]
     G --> VF{{production filter:<br/>harness.domain_check<br/>M5 deploy}}
+    G -.->|medido en M3,<br/>fuera del despliegue| T[[agente + find_exercises<br/>M3 sistema_final]]
     VF -->|passes| O[answer + catalog<br/>image/GIF<br/>M5 visual]
     VF -->|fails| N['No safe option'<br/>M5 deploy]
     O --> L[/JSON log + W&B<br/>no PII<br/>M5 deploy/]
@@ -76,15 +75,20 @@ flowchart LR
     HC{{health check:<br/>models + index<br/>M5 deploy}}
 ```
 
-**Cómo leerlo.** La ruta M3 (azul conceptual: ingest, índices, HyDE, RRF,
-rerank, prompt v2a con válvula, herramienta `find_exercises`) es la del sistema
-avanzado/agente que M3 ya mide. M5 agrega dos cosas alrededor del generador: lo
-carga en **int4 (nf4)** para abaratar la pieza más lenta (eficiencia), y envuelve
-la salida con el **filtro de producción**, el **componente visual** (imagen/GIF
-del catálogo), el **health check**, el **logging JSON sin PII** y la
-**observabilidad W&B** (despliegue). El sistema naive es la misma ruta sin HyDE,
-sin BM25, sin rerank y sin herramienta. Ver el diagrama y el detalle de cada
-pieza en `README.md` (secciones M3 y M5).
+**Cómo leerlo.** La ruta continua es lo que corre en el Space: el RAG avanzado
+de M3 (`sistema_rag_avanzado`: ingest, índices, HyDE, RRF, rerank, prompt v2a con
+válvula). La flecha punteada es el agente de M3 con la herramienta
+`find_exercises` (`sistema_final`): está en el repo y medido, pero **no se
+despliega**; la sección 3 dice por qué. M5 agrega alrededor del generador la
+técnica de eficiencia (**int4 (nf4)**, medida en el T4 y disponible en el
+respaldo con `QUANTIZED=1`; el Space usa bf16) y envuelve la salida con el
+**filtro de producción**, el **componente visual** (imagen/GIF del catálogo), el
+**health check**, el **logging JSON sin PII** y la **observabilidad W&B**. En el
+Space la búsqueda densa es exacta, un producto de matrices en la GPU sobre los
+mismos vectores que el índice de Chroma, porque Chroma no funciona dentro de los
+procesos de ZeroGPU (`final/deploy/README.md`); su top 8 coincide con el de M3 en
+los 14 casos del eval set. El sistema naive es la misma ruta sin HyDE, sin BM25 y
+sin rerank. Ver el detalle de cada pieza en `README.md` (secciones M3 y M5).
 
 ## 3. Decisiones técnicas (con alternativas descartadas)
 
@@ -115,6 +119,34 @@ Resumen; el detalle con las mediciones está en `docs/RESULTS_REPORT.md`,
   sin cualquiera de los dos, la dimensión 3 cae de 42.9% a 14.3%. El híbrido podría
   quitarse para ahorrar ~0.5 s sin pérdida medida. Se mantiene porque es barato y
   es la técnica estándar del laboratorio, pero el reporte lo dice tal cual.
+
+**Agente con herramienta (M3): medido, y fuera del despliegue.**
+- *Lo que se despliega:* el RAG avanzado de M3 (`sistema_rag_avanzado`), sin el
+  agente. Por eso el log JSON de cada petición nunca trae `tool` en
+  `components_used`: no es un componente apagado por error, es la decisión.
+- *Por qué:* en la tabla de M3 (`reports/scorecard_m3.csv`,
+  `reports/latency_m3.csv`) el agente empeora todo lo que importa para el
+  usuario:
+
+  | Sistema | Dimensión 3 (dominio) | Adversariales | Latencia mediana (T4) |
+  | --- | ---: | ---: | ---: |
+  | RAG avanzado (desplegado) | **42.9%** | **75%** | **15.2 s** |
+  | RAG avanzado + agente | 28.6% | 50% | 38.9 s |
+
+  El agente eligió la clase de equipo equivocada en 7 de sus 9 llamadas (pidió
+  `body weight` también para dos botellas de agua, que son `dumbbell`), llamó la
+  herramienta en 5 casos que no la necesitaban, y repitió la misma llamada en vez
+  de leer el resultado. Perdió dos casos que el avanzado acertaba (upper back y
+  la barra de cortina, adv04). En ZeroGPU, además, cada petición gasta la cuota
+  diaria de quien usa la demo, y el agente tarda unas 2.5 veces más por
+  pregunta (38.9 s contra 15.2 s en el T4).
+- *Lo que se pierde:* el agente es la única pieza que puede decir "no existe"
+  con certeza, y lo hizo en adv01 (dorsales con dos latas). En el despliegue esa
+  función la cubren la válvula del prompt y el **filtro de producción**, que
+  resuelve cada recomendación contra el catálogo antes de mostrarla.
+- *Lo que haría falta para volver a ponerlo:* mapear el objeto a su clase de
+  equipo sin preguntarle al 1.7B y saltar el paso de decisión cuando el top 8 ya
+  trae un ejercicio válido (ver la lectura honesta de M3 en el `README.md`).
 
 **Patrón visual (M4): imagen/GIF del catálogo, no imagen generada.**
 - *Alternativa descartada:* generar una imagen con un modelo de visión, o mover

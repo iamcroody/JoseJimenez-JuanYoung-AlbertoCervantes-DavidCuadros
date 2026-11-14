@@ -108,10 +108,17 @@ túnel como `cloudflared tunnel --url http://localhost:7860` también la publica
 | | Space de ZeroGPU | Colab T4 / computador |
 | --- | --- | --- |
 | Sistema | RAG avanzado de M3 (HyDE + híbrido + rerank), bge-small, top 8, pool 20 | el mismo |
+| Agente con `find_exercises` | no (ver abajo) | no |
 | Generador | Qwen3-1.7B + LoRA de M1, fusionado, **bf16** | fp16, o **int4** con `QUANTIZED=1` |
 | Encoder de consultas y reranker | GPU | GPU |
 | Embeddings del catálogo | proceso hijo, CPU | proceso principal, GPU |
 | Búsqueda densa | exacta, producto de matrices en GPU | Chroma (HNSW), como M3 |
+
+**El agente de M3 no se despliega.** En la tabla de M3 el agente
+(`sistema_final`) bajó la dimensión 3 de 42.9% a 28.6% y subió la latencia
+mediana de 15.2 s a 38.9 s frente al RAG avanzado, que es el que se sirve. Por
+eso `components_used` en el log nunca trae `tool`. La justificación completa
+está en `final/reporte.md`, sección 3.
 
 El retriever sale de `final/efficiency/efficiency.py::build_retriever`, el mismo
 que usa la fila "antes" de `notebooks/M5_efficiency.ipynb`, con las decisiones de
