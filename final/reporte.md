@@ -447,10 +447,15 @@ corrida T4).
 
 ## Sustentación
 
-Las diapositivas de la sustentación viven en `final/` o se enlazan desde aquí:
-TODO: pegar el enlace a las diapositivas (no se crean en esta entrega). La
-sustentación es a más tardar el lunes 23 de noviembre, máximo 10 minutos, con tres
-casos en la demo en vivo (un acierto, un rechazo honesto y un adversarial).
+Las diapositivas están en `final/slides/slides/sustentacion-final/index.tsx`,
+hechas con open-slide: diez páginas en el orden que pide la asignación (el
+problema y el usuario, el sistema en un dibujo, la demo con sus tres casos, los
+números contra las líneas base y la técnica de eficiencia, lo que falla y el
+riesgo ético), con lo que se dice en cada una en sus notas de presentador. Para
+verlas: `cd final/slides && npm install && npm run dev`, y abrir
+`http://localhost:5173/s/sustentacion-final` (la tecla F las pone en pantalla
+completa). La página de eficiencia queda marcada "pendiente" hasta la corrida T4.
+La sustentación es a más tardar el lunes 23 de noviembre, máximo 10 minutos.
 
 ## Números en este reporte
 
@@ -477,4 +482,3 @@ inventados):**
   `reports/efficiency_m5.csv`.
 - La tabla antes/después de eficiencia y el veredicto del presupuesto de pérdida:
   `final/efficiency/RESULTS.md`.
-- El enlace a las diapositivas de la sustentación.
