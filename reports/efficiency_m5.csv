@@ -1,0 +1,13 @@
+metric,antes-fp16,despues-int4
+dim3_domain_hit_rate,0.4286,0.2143
+dim3_domain_hit_rate_gold,0.3,0.3
+dim3_domain_hit_rate_adversarial,0.75,0.0
+dim1_similarity_mean,0.7393,0.7371
+dim1_step_grounding_rouge_l,1.0,0.9617
+dim2_judge_mean,2.7143,4.5714
+latency_p50_s,17.922,47.978
+latency_p95_s,28.623,61.753
+latency_mean_s,17.977,50.06
+peak_vram_mb,4221.18,2369.84
+footprint_mb,3281.74,1332.24
+n_queries,14,14

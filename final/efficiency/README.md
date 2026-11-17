@@ -92,9 +92,11 @@ exactitud. Se corren sobre el sistema int4 (`final/efficiency/invariance.py`):
    - escribe `reports/efficiency_m5.csv`, `reports/efficiency_m5_detail.json` y
      la tabla antes/después en `final/efficiency/RESULTS.md`.
 
-La tabla y los números se producen en la corrida T4 y se **pegan** en
-`RESULTS.md` tras la corrida. El repo se entrega con los números en blanco
-(marcados "lo llena la corrida T4"); **no se inventa ninguna métrica**.
+La corrida se hizo con `run_local.py` (las mismas celdas del notebook, en una
+RTX 4060 Laptop, con el generador forzado a fp16 como en un T4 y el juez en
+CPU). Los números están en `RESULTS.md`; la gráfica se regenera con
+`python final/efficiency/plot_m5.py reports/efficiency_m5_detail.json
+final/efficiency/img/efficiency_m5.png`.
 
 ## 6. Verificación sin GPU (local)
 
@@ -122,4 +124,6 @@ python -c "import json; json.load(open('notebooks/M5_efficiency.ipynb')); print(
 | `invariance.py` | Sonda de invariancia (perturbación pura), check de válvula y bloque adversarial sobre el sistema int4. |
 | `selftest.py` | Self-test sin GPU (solo numpy): percentiles, perturbación y esquema del dict. |
 | `requirements.txt` | Pines exactos: m3 + `bitsandbytes==0.44.1`. |
-| `RESULTS.md` | Esqueleto de la tabla antes/después con celdas en blanco para la corrida T4. |
+| `RESULTS.md` | Tabla antes/después medida, pruebas de válvula/invariancia/adversarial, veredicto del presupuesto y decisión. |
+| `run_local.py` | Corre las celdas del notebook fuera de Colab: `python final/efficiency/run_local.py .` desde la raíz. |
+| `plot_m5.py` | Gráfica de cuatro paneles (calidad, latencia, memoria, pruebas) desde `reports/efficiency_m5_detail.json`. |

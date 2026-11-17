@@ -717,8 +717,8 @@ const Efficiency: Page = () => (
     <p style={{ ...lead('cream'), fontSize: 32, marginTop: 20 }}>
       Antes de medir: aceptamos perder hasta 5 puntos si baja la memoria y no sube la latencia.
     </p>
-    <Card style={{ marginTop: 56, padding: '28px 48px 36px' }}>
-      <Tag>Corrida en GPU T4 · antes y después</Tag>
+    <Card style={{ marginTop: 36, padding: '24px 48px 28px' }}>
+      <Tag>Misma GPU (RTX 4060) · antes y después</Tag>
       <div style={{ display: 'grid', gridTemplateColumns: '340px repeat(4, 1fr)', columnGap: 32, marginTop: 12 }}>
         <Cell head>Versión</Cell>
         <Cell head>Aciertos</Cell>
@@ -726,19 +726,22 @@ const Efficiency: Page = () => (
         <Cell head>Latencia p95</Cell>
         <Cell head>Memoria</Cell>
         <Cell first>Antes (16 bits)</Cell>
-        <Cell pending>pendiente</Cell>
-        <Cell pending>pendiente</Cell>
-        <Cell pending>pendiente</Cell>
-        <Cell pending>pendiente</Cell>
+        <Cell>42,9 %</Cell>
+        <Cell>17,9 s</Cell>
+        <Cell>28,6 s</Cell>
+        <Cell>4 221 MB</Cell>
         <Cell first>Después (4 bits)</Cell>
-        <Cell pending>pendiente</Cell>
-        <Cell pending>pendiente</Cell>
-        <Cell pending>pendiente</Cell>
-        <Cell pending>pendiente</Cell>
+        <Cell>21,4 %</Cell>
+        <Cell>48,0 s</Cell>
+        <Cell>61,8 s</Cell>
+        <Cell>2 370 MB</Cell>
       </div>
     </Card>
-    <p style={{ fontFamily: MONO, fontSize: 22, color: MUTED_CREAM, marginTop: 36 }}>
-      Las cifras salen de la corrida en Colab T4 (notebooks/M5_efficiency.ipynb).
+    <p style={{ ...lead('cream'), fontSize: 30, marginTop: 28 }}>
+      No se cumplió: ahorra memoria, pero acierta la mitad, tarda casi el triple y deja de decir "no sé". Por eso el sistema en línea usa 16 bits.
+    </p>
+    <p style={{ fontFamily: MONO, fontSize: 22, color: MUTED_CREAM, marginTop: 20 }}>
+      reports/efficiency_m5.csv · final/efficiency/RESULTS.md
     </p>
   </Shell>
 );
@@ -882,7 +885,9 @@ Los casos trampa pasan de 0 a 3 de 4, y los pasos ahora son los del catálogo. (
 El agente con herramienta tardaba 38,9 segundos y acertaba menos, por eso no está en el despliegue.
 (40 segundos)`,
   `La técnica de eficiencia: cuantizar el generador a 4 bits. El presupuesto lo fijamos antes de medir.
-Leer la tabla con los números de la corrida T4 y decir si se cumplió el presupuesto. (50 segundos)`,
+A 4 bits la memoria baja de 4.221 a 2.370 MB, pero los aciertos caen de 42,9 a 21,4 por ciento,
+la consulta pasa de 18 a 48 segundos y en los casos trampa deja de decir "no sé" (de 3 de 4 a 0 de 4).
+No se cumplió el presupuesto, así que el sistema en línea usa 16 bits. Medido en la misma GPU las dos versiones. (50 segundos)`,
   `Lo que falla, medido en 60 combinaciones fuera del eval set.
 Responde poco: 7 de 49. Pero nunca inventa: 11 de 11 rechazos correctos y 0 ejercicios inventados.
 El arreglo es filtrar la búsqueda por la clase de equipo. (50 segundos)`,

@@ -2,17 +2,20 @@
 
 > **Números en este reporte.** Todas las cifras concretas vienen de corridas ya
 > ejecutadas y comiteadas en `reports/*.csv` / `reports/*.json`, de `docs/*.md` o
-> de las tablas del `README.md` raíz. Las únicas cifras pendientes son las que
-> solo puede producir una GPU: la tabla antes/después de eficiencia (fila
-> "Sistema final") y el veredicto del presupuesto de pérdida. Esas van marcadas
-> como TODO o "por completar (corrida T4)" y NO se inventan. Las peticiones del
-> Space quedan en W&B: <https://wandb.ai/jayoungh-me/macgyver-gym-rat-m5>.
-> El Space está en vivo: <https://huggingface.co/spaces/jayoungh/macgyver-gym-rat>. Al final de este reporte hay una nota que separa qué
-> salió de una corrida ejecutada y qué espera la corrida T4 del Módulo 5.
+> de las tablas del `README.md` raíz. La tabla antes/después de eficiencia y el
+> veredicto del presupuesto de pérdida salen de `reports/efficiency_m5.csv` y
+> `reports/efficiency_m5_detail.json` (ver `final/efficiency/RESULTS.md`). Las
+> peticiones del Space quedan en W&B:
+> <https://wandb.ai/jayoungh-me/macgyver-gym-rat-m5>. El Space está en vivo:
+> <https://huggingface.co/spaces/jayoungh/macgyver-gym-rat>. Al final de este
+> reporte hay una nota que dice de qué corrida sale cada cifra.
 >
 > Mismo eval set (`eval/eval_set.json`, 14 casos, 4 adversariales) y mismo
 > harness (`eval/harness.py`, 3 dimensiones) en todas las filas de la tabla
-> evolutiva; latencia medida en la misma máquina (Colab T4); nada de PII.
+> evolutiva; nada de PII. Las filas M2/M3/M4 se midieron en un Colab T4 y la
+> comparación de eficiencia (fp16 contra int4) en una RTX 4060 Laptop, las dos
+> versiones en la misma máquina; las latencias de máquinas distintas no se
+> comparan entre sí.
 
 ## 1. El problema y el usuario
 
@@ -81,8 +84,9 @@ de M3 (`sistema_rag_avanzado`: ingest, índices, HyDE, RRF, rerank, prompt v2a c
 válvula). La flecha punteada es el agente de M3 con la herramienta
 `find_exercises` (`sistema_final`): está en el repo y medido, pero **no se
 despliega**; la sección 3 dice por qué. M5 agrega alrededor del generador la
-técnica de eficiencia (**int4 (nf4)**, medida en el T4 y disponible en el
-respaldo con `QUANTIZED=1`; el Space usa bf16) y envuelve la salida con el
+técnica de eficiencia (**int4 (nf4)**, medida contra fp16 y disponible en el
+respaldo con `QUANTIZED=1`; el Space usa bf16 porque int4 no pasó el
+presupuesto de pérdida, ver sección 3) y envuelve la salida con el
 **filtro de producción**, el **componente visual** (imagen/GIF del catálogo), el
 **health check**, el **logging JSON sin PII** y la **observabilidad W&B**. En el
 Space la búsqueda densa es exacta, un producto de matrices en la GPU sobre los
@@ -173,21 +177,29 @@ Resumen; el detalle con las mediciones está en `docs/RESULTS_REPORT.md`,
   que rompería la comparación con M1/M3) y aplicando el MISMO adaptador LoRA
   comiteado. El pipeline de RAG no cambia una línea
   (`final/efficiency/README.md`).
+- *Qué salió y qué decidimos:* int4 **no pasó** el presupuesto. Bajó la memoria
+  (pico de VRAM 4 221 → 2 370 MB), pero perdió 21.4 puntos de dimensión 3, fue
+  2.7 veces más lento (p50 17.9 → 48.0 s) y dejó de decir "no sé" (la válvula no
+  disparó en ningún adversarial). Por eso **el Space sirve el generador en 16
+  bits** y int4 queda como experimento medido. La tabla completa está en la
+  sección 5 (ablación 2) y en `final/efficiency/RESULTS.md`.
 
 ## 4. La tabla evolutiva
 
 Mismo eval set (`eval/eval_set.json`, 14 casos) y mismo harness (`eval/harness.py`)
 en cada etapa. Mismo generador (el LoRA de M1, greedy, seed 42). La latencia es
-mediana (p50) de reloj en la misma máquina (Colab T4). Fuentes:
-`reports/scorecard_m3.csv`, `reports/latency_m3.csv`, y las tablas M2/M3 del
-`README.md`.
+mediana (p50) de reloj. Fuentes: `reports/scorecard_m3.csv`,
+`reports/latency_m3.csv`, `reports/efficiency_m5.csv` y las tablas M2/M3 del
+`README.md`. La columna "Máquina" dice dónde se midió cada latencia: solo se
+comparan latencias de la misma máquina.
 
-| Sistema | Dim 1 · similitud (0-1) | Dim 2 · juez (1-5) | Dim 3 · acierto de dominio | Casos con imagen | Latencia p50 |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Línea base del Módulo 2 (sin RAG) | 0.787 | 4.714 | 21.4% | 0 (sin componente visual) | 7.9 s |
-| Sistema del Módulo 3 (RAG avanzado) | 0.705 | 2.429 | **42.9%** | 0 (sin componente visual) | 15.2 s |
-| Sistema del Módulo 4 (visual) | 0.705 | 2.429 | **42.9%** | **3 de 14** | ~15.2 s |
-| Sistema final (eficiente + desplegado, int4) | por completar (corrida T4) | por completar (corrida T4) | por completar (corrida T4) | por completar (corrida T4) | por completar (corrida T4) |
+| Sistema | Dim 1 · similitud (0-1) | Dim 2 · juez (1-5) | Dim 3 · acierto de dominio | Casos con imagen | Latencia p50 | Máquina |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Línea base del Módulo 2 (sin RAG) | 0.787 | 4.714 | 21.4% | 0 (sin componente visual) | 7.9 s | T4 |
+| Sistema del Módulo 3 (RAG avanzado) | 0.705 | 2.429 | **42.9%** | 0 (sin componente visual) | 15.2 s | T4 |
+| Sistema del Módulo 4 (visual) | 0.705 | 2.429 | **42.9%** | **3 de 14** | ~15.2 s | T4 |
+| Sistema final desplegado (RAG avanzado en 16 bits + filtro + visual) | 0.739 | 2.714 | **42.9%** | **3 de 14** | 17.9 s (p95 28.6 s) | RTX 4060 |
+| Sistema final con int4 (medido, no desplegado) | 0.737 | 4.571 | 21.4% | no medido (no se despliega) | 48.0 s (p95 61.8 s) | RTX 4060 |
 
 **Notas de la tabla (honestas).**
 - La fila M4 (visual) **no cambia los números del harness**: el componente visual
@@ -201,20 +213,33 @@ mediana (p50) de reloj en la misma máquina (Colab T4). Fuentes:
   levator scapulae), los mismos 3 aciertos de M3 en los casos con respuesta. Los
   4 adversariales no muestran imagen, que es lo correcto. En producción cada
   petición lo registra en el log JSON (`components_used` incluye `vision`).
-- La fila **Sistema final** se mide sobre `sistema_rag_avanzado` cargado con el
-  generador int4 en `notebooks/M5_efficiency.ipynb`. Sus celdas quedan en blanco a
-  propósito hasta la corrida T4; el notebook escribe `reports/efficiency_m5.csv` y
-  `reports/efficiency_m5_detail.json`, y de ahí se pegan a
-  `final/efficiency/RESULTS.md` y a esta fila. No se inventa ninguna cifra.
+- Las dos filas **Sistema final** salen de `reports/efficiency_m5.csv`: el mismo
+  `sistema_rag_avanzado` con el generador en fp16 y en int4, medidos uno tras otro
+  en la misma RTX 4060 (`final/efficiency/run_local.py`, las celdas de
+  `notebooks/M5_efficiency.ipynb`). La fila en 16 bits es lo que sirve el Space:
+  reproduce los mismos 6 aciertos de M3 (9 de las 14 respuestas son idénticas al
+  texto de `reports/replies_m3.json`; las otras cambian palabras por la GPU
+  distinta, sin cambiar ningún acierto). Su latencia es 17.9 s contra 15.2 s de M3
+  porque es otra máquina, no otro sistema. Su dimensión 2 sube un poco porque el
+  juez corrió en CPU. Los "3 de 14" casos con imagen son los de
+  `reports/image_cases_final.csv`, medidos por el camino desplegado.
+- La fila en 16 bits es el mismo sistema que sirve el Space; allí el generador
+  corre en bf16 sobre la GPU de ZeroGPU y aquí se midió en fp16 (lo que elige un
+  T4), para que la fila "antes" sea comparable con M3.
+- En la fila int4, "casos con imagen" no se midió por el camino desplegado
+  (int4 no se despliega). Sus 3 aciertos con respuesta son biceps, triceps y
+  pectorals, distintos de los 3 de fp16.
+- El juez le da 4.57 a int4 contra 2.71 a fp16 pese a que int4 acierta la mitad:
+  premia contestar con seguridad y en los adversariales int4 inventa en vez de
+  rechazar. Es el sesgo de M2, no una mejora (ver sección 7).
 - La línea base se regeneró en la corrida de M3 para medir su latencia; sus 14
   respuestas son idénticas a la corrida M2 (el generador es determinista), así que
   los deltas vienen de los sistemas y no del ruido. La latencia de reloj se mueve un
   poco entre corridas (la misma base dio 8.3 s en la primera corrida de M3).
 - La asignación pide reportar p50 y p95. Las tablas comiteadas de M3
-  (`reports/latency_m3.csv`) traen mediana/media/máximo; el p95 por sistema se
-  computa en las corridas T4 (M5 lo agrega con `numpy.percentile`, ver
-  `final/efficiency/measure.py` y `final/REPRODUCIBILITY.md`). La fila final trae
-  p50 y p95 tras la corrida.
+  (`reports/latency_m3.csv`) traen mediana/media/máximo, no p95; M5 lo agrega con
+  `numpy.percentile` (`final/efficiency/measure.py`), así que las filas finales y
+  la tabla antes/después traen p50 y p95.
 
 **Split answerable / adversarial de la dimensión 3** (`reports/scorecard_m3.csv`):
 
@@ -223,15 +248,16 @@ mediana (p50) de reloj en la misma máquina (Colab T4). Fuentes:
 | Línea base M2 | 30% | 0% |
 | Naive RAG | 0% | 25% |
 | Advanced RAG (M3/M4) | 30% | 75% |
-| Final (int4) | por completar (corrida T4) | por completar (corrida T4) |
+| Final desplegado (16 bits) | 30% | 75% |
+| Final con int4 | 30% | **0%** |
 
 Step grounding (ROUGE-L de los pasos recitados contra los pasos reales del
 ejercicio nombrado): 0.550 en la línea base, 1.000 en el sistema avanzado.
 
 ## 5. Ablación
 
-Se reutilizan dos ablaciones ya medidas, más la de eficiencia que produce la
-corrida T4.
+Dos ablaciones: quitar una técnica de recuperación (M3) y quitar la técnica de
+eficiencia (M5).
 
 **Ablación 1: quitar una técnica de recuperación del RAG avanzado**
 (`README.md` M3, `reports/scorecard_m3.csv`):
@@ -247,12 +273,25 @@ corrida T4.
 3 de 42.9% a 14.3%); el híbrido no mueve nada medible. HyDE cuesta ~+7.4 s porque
 es una generación completa extra.
 
-**Ablación 2: quitar la técnica de eficiencia (int4 vs fp16).** La corrida T4
-mide el sistema avanzado con el generador fp16 ("antes") y con int4 ("después")
-sobre el mismo eval set y la misma máquina, y reporta cuántos puntos de dimensión
-3 se perdieron o ganaron, el pico de VRAM y la latencia p50/p95. La tabla
-antes/después y el veredicto están en `final/efficiency/RESULTS.md` (por completar,
-corrida T4).
+**Ablación 2: quitar la técnica de eficiencia (int4 vs fp16).** El mismo
+sistema avanzado con el generador en fp16 ("antes") y en int4 ("después"), mismo
+eval set y misma máquina (RTX 4060 Laptop), `reports/efficiency_m5.csv`:
+
+| Versión | Calidad (dim 3) | Adversarial | Latencia p50 | Latencia p95 | Memoria (pico VRAM / pesos) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Antes (fp16) | **42.9%** | **75%** | **17.9 s** | **28.6 s** | 4 221 / 3 282 MB |
+| Después (int4 nf4) | 21.4% | 0% | 48.0 s | 61.8 s | **2 370 / 1 332 MB** |
+
+Pruebas que no miden exactitud, repetidas sobre int4: la válvula dispara en
+adv01 y adv04 con fp16 y **en ninguno** con int4; la invariancia (respuestas
+idénticas bajo una perturbación trivial) baja de 2/14 a 1/14.
+
+*Lectura:* quitar int4 (volver a fp16) **mejora** todo menos la memoria: +21.4
+puntos de dimensión 3, la válvula vuelve a funcionar y la consulta tarda 2.7
+veces menos. int4 contesta igual los casos con respuesta (30% en las dos) pero
+pierde la capacidad de decir "no sé", y es más lento porque bitsandbytes
+descomprime los pesos en cada paso de generación. El detalle y la gráfica están
+en `final/efficiency/RESULTS.md`.
 
 ## 6. Análisis de errores (>= 5 casos)
 
@@ -444,10 +483,12 @@ De la lectura honesta de M1/M2/M3:
 Fijado **antes** de medir: aceptamos perder hasta **5 puntos** de tasa de acierto
 de dominio (dimensión 3) en el RAG avanzado, es decir bajar de **42.9%** a no menos
 de **37.9%**, siempre que int4 reduzca el pico de VRAM por debajo de la huella fp16
-y **no aumente** la latencia p95 respecto de fp16. **¿Se cumplió?** El veredicto
-(SÍ / NO + por qué) lo declara la corrida T4 y vive en
-[`final/efficiency/RESULTS.md`](efficiency/RESULTS.md) (por completar hasta la
-corrida T4).
+y **no aumente** la latencia p95 respecto de fp16. **¿Se cumplió?** **NO.** Solo
+se cumplió la memoria (pico de VRAM 4 221 → 2 370 MB). La dimensión 3 cayó 21.4
+puntos (42.9% → 21.4%, por debajo del piso de 37.9%) y la p95 subió de 28.6 s a
+61.8 s. **Decisión:** el Space sirve el generador en 16 bits, que cabe en su
+memoria; int4 queda en el repo como experimento medido. Detalle en
+[`final/efficiency/RESULTS.md`](efficiency/RESULTS.md).
 
 ## Sustentación
 
@@ -460,7 +501,7 @@ para agradecer el curso, con lo que se dice en cada una en sus notas de
 presentador. Para
 verlas: `cd final/slides && npm install && npm run dev`, y abrir
 `http://localhost:5173/s/sustentacion-final` (la tecla F las pone en pantalla
-completa). La página de eficiencia queda marcada "pendiente" hasta la corrida T4.
+completa). La página de eficiencia trae la tabla antes/después medida.
 La sustentación es a más tardar el lunes 23 de noviembre, máximo 10 minutos.
 
 ## Números en este reporte
@@ -480,11 +521,10 @@ La sustentación es a más tardar el lunes 23 de noviembre, máximo 10 minutos.
 - Métrica de éxito, usuario, modelo base y ética: `docs/PROJECT_DEFINITION.md`,
   `docs/RESULTS_REPORT.md`, `docs/DATASET.md`.
 
-**Pendientes de la corrida T4 del Módulo 5 (marcados "por completar" o TODO, nunca
-inventados):**
+**De la corrida de eficiencia del Módulo 5 (RTX 4060 Laptop):**
 
-- La fila "Sistema final (eficiente + desplegado)" de la tabla evolutiva (dim 1/2/3,
-  casos con imagen por corrida, p50/p95): `notebooks/M5_efficiency.ipynb` →
-  `reports/efficiency_m5.csv`.
-- La tabla antes/después de eficiencia y el veredicto del presupuesto de pérdida:
-  `final/efficiency/RESULTS.md`.
+- Las filas "Sistema final" de la tabla evolutiva, la ablación 2, la tabla
+  antes/después, las pruebas de válvula/invariancia/adversarial sobre int4 y el
+  veredicto del presupuesto: `reports/efficiency_m5.csv`,
+  `reports/efficiency_m5_detail.json`, `final/efficiency/RESULTS.md`
+  (script: `final/efficiency/run_local.py`).

@@ -90,7 +90,7 @@ uv run python final/deploy/selftest.py       # M5 deploy plumbing
 | [M1](#m1---fine-tuning-baseline-si4006) | Can LoRA teach a 1.7B model to name a real exercise for a household object? | Constraint satisfaction on the held-out test split: 0.0% zero-shot, 18.5% with LoRA. It does not refuse (0 refusals in 154). | [`M1_macgyver.ipynb`](notebooks/M1_macgyver.ipynb) |
 | [M2](#m2---evaluation-harness-si4006) | How do we measure that without being fooled by fluent answers? | Three dimensions on 14 cases. The LLM judge rated the worse system higher; the catalog-based domain hit rate (21.4% for LoRA) is the number we trust. | [`M2_harness.ipynb`](notebooks/M2_harness.ipynb) |
 | [M3](#m3---agentic-rag-si4006) | Does retrieving from the catalog fix the invented exercises? | Domain hit rate: 21.4% baseline, 7.1% naive RAG, **42.9% advanced RAG** (hybrid + rerank + HyDE), 28.6% with the agent tool. | [`M3_rag.ipynb`](notebooks/M3_rag.ipynb) |
-| [M5](#m5---final-eficiencia--despliegue-si4006) | Can we make it cheaper to run and ship it safely to real users? | int4 (nf4) quantization of the generator (the latency bottleneck), plus a public Gradio Space with a visual component, a production safety filter, health check, JSON logging and W&B. Before/after numbers come from the Colab T4 run: see [`final/efficiency/RESULTS.md`](final/efficiency/RESULTS.md). | [`notebooks/M5_efficiency.ipynb`](notebooks/M5_efficiency.ipynb) |
+| [M5](#m5---final-eficiencia--despliegue-si4006) | Can we make it cheaper to run and ship it safely to real users? | int4 (nf4) quantization of the generator (the latency bottleneck), plus a public Gradio Space with a visual component, a production safety filter, health check, JSON logging and W&B. int4 failed the loss budget (−21.4 pts, 2.7× slower, valve lost), so the Space serves 16 bits: see [`final/efficiency/RESULTS.md`](final/efficiency/RESULTS.md). | [`notebooks/M5_efficiency.ipynb`](notebooks/M5_efficiency.ipynb) |
 
 **Running it on Colab.** Open the notebook, choose *Runtime → Change runtime type → T4 GPU*,
 and run every cell in order. The setup cell clones this repository with the dataset
@@ -915,9 +915,13 @@ run over the quantized generator without a line changed.
 hit rate (dimension 3) on the advanced RAG system, dropping from 42.9% to no less than 37.9%,
 as long as int4 lowers peak VRAM below the fp16 footprint and does not raise p95 latency. The
 before/after table, the invariance / valve / adversarial re-run on the quantized version, and
-the explicit "budget held?" verdict live in [`final/efficiency/RESULTS.md`](final/efficiency/RESULTS.md)
-and are filled by the Colab T4 run (`notebooks/M5_efficiency.ipynb`); no number is invented.
-See [`final/efficiency/README.md`](final/efficiency/README.md) for the full rationale and the
+the explicit "budget held?" verdict live in [`final/efficiency/RESULTS.md`](final/efficiency/RESULTS.md).
+
+**Result: the budget did not hold.** Measured on the same GPU (RTX 4060 Laptop, generator in
+fp16 as on a T4), int4 cut peak VRAM from 4,221 to 2,370 MB, but dimension 3 fell from 42.9% to
+21.4%, p50/p95 latency rose from 17.9/28.6 s to 48.0/61.8 s, and the escape valve stopped
+firing (adversarial block 75% → 0%). The Space therefore serves the generator in 16 bits and
+int4 stays in the repo as a measured experiment. Numbers: `reports/efficiency_m5.csv`. See [`final/efficiency/README.md`](final/efficiency/README.md) for the full rationale and the
 discarded alternatives (int8, distillation, a smaller-model LoRA).
 
 ### Deployment: public Gradio Space
@@ -927,7 +931,7 @@ to end. Free Hugging Face accounts can no longer create CPU Gradio Spaces, so, a
 professor allowed, it runs on a **ZeroGPU Space**, where a GPU is lent only while a request
 runs. The backup is the same `app.py` on a Colab T4 or a laptop with a public Gradio link
 (`SHARE=1`). The Space serves the M3 advanced RAG with the generator in bf16; the int4
-technique is measured on the T4 and can be shown live on the backup (`QUANTIZED=1`). The
+technique was measured against fp16 (it failed the loss budget) and can be shown live on the backup (`QUANTIZED=1`). The
 deploy README says exactly what runs where. The app adds the production pieces the rubric
 asks for:
 
@@ -950,10 +954,6 @@ asks for:
   filter blocks, component frequency). Missing `wandb` or `WANDB_API_KEY` is a silent no-op,
   so there are no mandatory paid keys; keys, when present, go in the Space secrets, never in
   the repo.
-
-The demo URL and the W&B project link are placeholders until the team deploys (see the top of
-this README).
-
 ### Continuous integration and reproducibility
 
 `.github/workflows/harness.yml` runs on every push and pull request (Ubuntu, Python 3.12,
@@ -974,8 +974,8 @@ The complete final report, with every section the assignment requires (problem a
 system diagram, justified decisions with discarded alternatives, evolutionary table with
 latency, ablation, error analysis with at least 5 failing cases, limitations, the three ethics
 questions, who did what, AI usage), is in [`final/reporte.md`](final/reporte.md). It is grounded
-in the same `reports/*.csv` and module docs this README summarizes; the efficiency row, the
-demo URL and the W&B link are the only placeholders, filled by the Colab T4 run and the deploy.
+in the same `reports/*.csv` and module docs this README summarizes, including the efficiency
+run (`reports/efficiency_m5.csv`), the live Space and the W&B project.
 
 [↑ Back to contents](#contents)
 
