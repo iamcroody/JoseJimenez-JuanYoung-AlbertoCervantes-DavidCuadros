@@ -15,7 +15,7 @@ El informe técnico de M5 en inglés (eficiencia, despliegue y CI) está en
 | `ci/harness_smoke.py` | Humo determinista del harness para la GitHub Action: corre el harness sobre 5 casos contra un sistema *stub* y falla si la dimensión 3 cae por debajo de una línea base comiteada. Realiza, factible en CPU, el *"3 a 5 casos … falle si el puntaje cae"* del PDF. | Hecho |
 | `REPRODUCIBILITY.md` | Pegamento de reproducibilidad: clonar con submódulo, ids/versiones de modelos pineados, semilla 42, decodificación greedy, y el orden de corrida de notebooks (M1 → M2 → M3 → M5 eficiencia → deploy) mapeado a cada `reports/*.csv`. | Hecho |
 | `ENVIRONMENT_NOTES.md` | Restricciones del entorno local (sin red, sin GPU) y qué self-tests corren localmente vs cuáles se verifican en Colab T4. | Hecho |
-| `slides/` | Diapositivas de la sustentación en open-slide (`slides/sustentacion-final/index.tsx`), once páginas con notas de presentador. `npm install && npm run dev` y abrir `/s/sustentacion-final`. | Hechas, con la tabla de eficiencia medida |
+| `slides/` | Diapositivas de la sustentación: el PDF listo para ver (`slides/sustentacion-final.pdf`) y su código en open-slide (`slides/sustentacion-final/index.tsx`), once páginas con notas de presentador. `npm install && npm run dev` y abrir `/s/sustentacion-final`. | Hechas, con la tabla de eficiencia medida |
 
 ## Dónde se ejecuta
 

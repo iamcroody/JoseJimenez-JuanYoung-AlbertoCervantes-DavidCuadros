@@ -415,8 +415,8 @@ const Cover: Page = () => (
         style={{ width: 700, padding: '22px 32px' }}
         rows={[
           ['> final · despliegue', ''],
-          ['modelo', 'Qwen3-1.7B + LoRA'],
-          ['sistema', 'RAG + comprobación'],
+          ['modelo', 'Qwen3-1.7B ajustado'],
+          ['sistema', 'busca y comprueba'],
           ['estado', 'EN LÍNEA', true],
         ]}
       />
@@ -663,7 +663,7 @@ const Result: Page = () => (
         <Figure size={72} value="0 → 3 de 4" label="casos trampa resueltos al buscar" color="var(--osd-accent)" />
       </Card>
       <Card style={{ padding: '32px 40px', width: 620 }}>
-        <Figure size={72} value="0,55 → 1,00" label="pasos iguales a los del catálogo (ROUGE-L)" />
+        <Figure size={72} value="0,55 → 1,00" label="parecido de los pasos con los reales del catálogo (1 = iguales)" />
       </Card>
     </div>
   </Shell>
@@ -678,7 +678,7 @@ const Cost: Page = () => (
       </Card>
       <Card gold style={{ padding: '44px 48px', width: 760 }}>
         <Figure value="38,9 s" color="var(--osd-accent)"
-          label="con el agente y su herramienta, que bajaba los aciertos a 28,6 %" />
+          label="con el agente y su herramienta: más lento, y acierta 28,6 % frente a 42,9 %" />
       </Card>
     </div>
     <Steps>
@@ -722,8 +722,8 @@ const Efficiency: Page = () => (
       <div style={{ display: 'grid', gridTemplateColumns: '340px repeat(4, 1fr)', columnGap: 32, marginTop: 12 }}>
         <Cell head>Versión</Cell>
         <Cell head>Aciertos</Cell>
-        <Cell head>Latencia p50</Cell>
-        <Cell head>Latencia p95</Cell>
+        <Cell head>Típico · p50</Cell>
+        <Cell head>Lento · p95</Cell>
         <Cell head>Memoria</Cell>
         <Cell first>Antes (16 bits)</Cell>
         <Cell>42,9 %</Cell>
@@ -886,6 +886,7 @@ El agente con herramienta tardaba 38,9 segundos y acertaba menos, por eso no est
 A 4 bits la memoria baja de 4.221 a 2.370 MB, pero los aciertos caen de 42,9 a 21,4 por ciento,
 la consulta pasa de 18 a 48 segundos y en los casos trampa deja de decir "no sé" (de 3 de 4 a 0 de 4).
 No se cumplió el presupuesto, así que el sistema en línea usa 16 bits.
+Típico (p50) es lo que tarda una consulta normal; lento (p95) es lo que tardan las más lentas, 1 de cada 20.
 Si preguntan por qué aquí el antes es 17,9 s y no 15,2 s: esta tabla se midió en una RTX 4060, no en el T4;
 cada comparación es dentro de una sola máquina. (50 segundos)`,
   `Lo que falla, medido en 60 combinaciones fuera del eval set.
