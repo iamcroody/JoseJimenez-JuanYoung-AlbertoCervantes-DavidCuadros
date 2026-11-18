@@ -11,6 +11,7 @@ not improvise something that does not train the muscle or could hurt them.
 | **W&B project** | <https://wandb.ai/jayoungh-me/macgyver-gym-rat-m5>: latency per request, recommendations against refusals, filter blocks and which components ran. One run per start of the Space. Without `WANDB_API_KEY`, W&B is a silent no-op and the app still runs. |
 | **Final report** | [`final/reporte.md`](final/reporte.md): problem and user, system diagram, decisions, evolutionary table, ablation, error analysis, limitations, ethics, who did what, AI use. |
 | **Slides** | [PDF](final/slides/sustentacion-final.pdf) of the defence deck. Source in [`final/slides`](final/slides/slides/sustentacion-final/index.tsx), built with open-slide (`cd final/slides && npm install && npm run dev`). |
+| **Backup demo video** | The three demo cases and the health check, recorded on the live Space (`videoBackUP.mp4`, 2 min), in [this OneDrive folder](https://eafit-my.sharepoint.com/:f:/r/personal/jayoungh_eafit_edu_co/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fjayoungh%5Feafit%5Fedu%5Fco%2FDocuments%2FSEptimo%2Ftopicos&share=cgqVBwbbFP1YSYA%5F69k88kcVEgUCZwfCTe%5FImsBx2%2D7w2dl9%2Dg). |
 
 ## How it works
 
