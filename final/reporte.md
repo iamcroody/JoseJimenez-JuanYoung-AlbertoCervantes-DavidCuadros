@@ -523,6 +523,11 @@ verlas en vivo, con las animaciones: `cd final/slides && npm install && npm run 
 completa). La página de eficiencia trae la tabla antes/después medida.
 La sustentación es a más tardar el lunes 23 de noviembre, máximo 10 minutos.
 
+**Video de respaldo de la demo** (por si el Space o la conexión fallan durante la
+sustentación): los tres casos (fácil, difícil y trampa) y el health check, grabados
+sobre el Space en línea, en [esta carpeta de OneDrive](https://eafit-my.sharepoint.com/:f:/r/personal/jayoungh_eafit_edu_co/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fjayoungh%5Feafit%5Fedu%5Fco%2FDocuments%2FSEptimo%2Ftopicos&share=cgqVBwbbFP1YSYA%5F69k88kcVEgUCZwfCTe%5FImsBx2%2D7w2dl9%2Dg) (`videoBackUP.mp4`, 2
+minutos).
+
 ## Números en este reporte
 
 **De corridas ya ejecutadas y comiteadas:**
