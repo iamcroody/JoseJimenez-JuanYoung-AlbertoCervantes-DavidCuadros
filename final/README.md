@@ -1,8 +1,9 @@
 # final/ (Integrador del Módulo 5)
 
 Esta carpeta reúne la entrega final del proyecto: la técnica de eficiencia,
-el despliegue, el reporte y el material de sustentación. El contenido se
-llena en las features posteriores del Módulo 5; aquí vive el índice.
+el despliegue, el reporte y el material de sustentación. Aquí vive su índice.
+El informe técnico de M5 en inglés (eficiencia, despliegue y CI) está en
+[`docs/modules/M5.md`](../docs/modules/M5.md).
 
 ## Índice
 

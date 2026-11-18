@@ -143,8 +143,8 @@ filtro de producción + la resolución de imagen sobre un catálogo/dataset fals
 ## Health check
 
 - **Función:** `health.health_check(state)`.
-- **Expuesto en la UI:** acordeón "Health check (liveness, sin consulta real)" →
-  botón "Ver estado", que imprime el JSON del estado.
+- **Expuesto en la UI:** acordeón "Estado del sistema (health check, sin consulta
+  real)", botón "Revisar ahora", que muestra el estado y su JSON.
 - **Endpoint de API `health`:** el mismo botón se publica con
   `api_name="health"`, así que se consulta sin abrir la página ni hacer una
   pregunta real:

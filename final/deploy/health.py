@@ -23,9 +23,10 @@ ping al almacén vectorial.
 En el self-test, `state` se construye con loaders MONKEYPATCHED/mockeados, de modo
 que `health_check` devuelve un dict bien formado sin cargar pesos ni Chroma.
 
-Ruta/expuesto: la app de Gradio lo expone con un botón "Ver estado" (ver
-`app.py::build_interface`). Para un endpoint HTTP tipo `/health`, montar esta
-función en un FastAPI junto al `demo.app` de Gradio (documentado en README).
+Ruta/expuesto: la app de Gradio lo expone en el acordeón "Estado del sistema"
+(botón "Revisar ahora", ver `app.py::build_interface`) y como endpoint de API
+`health`, que se consulta con curl o `gradio_client` sin hacer una pregunta real
+(comandos en `final/deploy/README.md`).
 """
 
 import subprocess
