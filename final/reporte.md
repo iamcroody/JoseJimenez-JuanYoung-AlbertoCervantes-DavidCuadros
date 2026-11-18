@@ -2,7 +2,7 @@
 
 > **Números en este reporte.** Todas las cifras concretas vienen de corridas ya
 > ejecutadas y comiteadas en `reports/*.csv` / `reports/*.json`, de `docs/*.md` o
-> de las tablas del `README.md` raíz. La tabla antes/después de eficiencia y el
+> de los informes de cada módulo (`docs/modules/`). La tabla antes/después de eficiencia y el
 > veredicto del presupuesto de pérdida salen de `reports/efficiency_m5.csv` y
 > `reports/efficiency_m5_detail.json` (ver `final/efficiency/RESULTS.md`). Las
 > peticiones del Space quedan en W&B:
@@ -93,12 +93,12 @@ Space la búsqueda densa es exacta, un producto de matrices en la GPU sobre los
 mismos vectores que el índice de Chroma, porque Chroma no funciona dentro de los
 procesos de ZeroGPU (`final/deploy/README.md`); su top 8 coincide con el de M3 en
 los 14 casos del eval set. El sistema naive es la misma ruta sin HyDE, sin BM25 y
-sin rerank. Ver el detalle de cada pieza en `README.md` (secciones M3 y M5).
+sin rerank. Ver el detalle de cada pieza en `docs/modules/M3.md` y `docs/modules/M5.md`.
 
 ## 3. Decisiones técnicas (con alternativas descartadas)
 
 Resumen; el detalle con las mediciones está en `docs/RESULTS_REPORT.md`,
-`docs/DATASET.md` y las secciones M3/M5 del `README.md`.
+`docs/DATASET.md`, `docs/modules/M3.md` y `docs/modules/M5.md`.
 
 **Modelo base: `Qwen/Qwen3-1.7B`.**
 - *Alternativas descartadas:* el resto de la familia Qwen3 (el 8B corría pero
@@ -151,7 +151,7 @@ Resumen; el detalle con las mediciones está en `docs/RESULTS_REPORT.md`,
   resuelve cada recomendación contra el catálogo antes de mostrarla.
 - *Lo que haría falta para volver a ponerlo:* mapear el objeto a su clase de
   equipo sin preguntarle al 1.7B y saltar el paso de decisión cuando el top 8 ya
-  trae un ejercicio válido (ver la lectura honesta de M3 en el `README.md`).
+  trae un ejercicio válido (ver la lectura honesta de M3 en `docs/modules/M3.md`).
 
 **Patrón visual (M4): imagen/GIF del catálogo, no imagen generada.**
 - *Alternativa descartada:* generar una imagen con un modelo de visión, o mover
@@ -189,8 +189,8 @@ Resumen; el detalle con las mediciones está en `docs/RESULTS_REPORT.md`,
 Mismo eval set (`eval/eval_set.json`, 14 casos) y mismo harness (`eval/harness.py`)
 en cada etapa. Mismo generador (el LoRA de M1, greedy, seed 42). La latencia es
 mediana (p50) de reloj. Fuentes: `reports/scorecard_m3.csv`,
-`reports/latency_m3.csv`, `reports/efficiency_m5.csv` y las tablas M2/M3 del
-`README.md`. La columna "Máquina" dice dónde se midió cada latencia: solo se
+`reports/latency_m3.csv`, `reports/efficiency_m5.csv` y las tablas de
+`docs/modules/M2.md` y `docs/modules/M3.md`. La columna "Máquina" dice dónde se midió cada latencia: solo se
 comparan latencias de la misma máquina.
 
 | Sistema | Dim 1 · similitud (0-1) | Dim 2 · juez (1-5) | Dim 3 · acierto de dominio | Casos con imagen | Latencia p50 | Máquina |
@@ -260,7 +260,7 @@ Dos ablaciones: quitar una técnica de recuperación (M3) y quitar la técnica d
 eficiencia (M5).
 
 **Ablación 1: quitar una técnica de recuperación del RAG avanzado**
-(`README.md` M3, `reports/scorecard_m3.csv`):
+(`docs/modules/M3.md`, `reports/scorecard_m3.csv`):
 
 | Sistema | Dim 1 | Dim 2 | Dim 3 | Ejercicio válido en contexto | Latencia p50 |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -295,7 +295,7 @@ en `final/efficiency/RESULTS.md`.
 
 ## 6. Análisis de errores (>= 5 casos)
 
-Todos los casos vienen de la lectura honesta de M2/M3 en el `README.md` y de
+Todos los casos vienen de la lectura honesta de M2/M3 (`docs/modules/`) y de
 `reports/replies_m3.json` / `reports/scorecard_m3_detail.json`. Agrupados por tipo,
 con qué pieza falló y qué se haría.
 
@@ -474,7 +474,7 @@ De la lectura honesta de M1/M2/M3:
 
 ## 10. Uso de IA
 
-(Adaptado de la sección de uso de IA del `README.md`, honesto y corto.)
+(Adaptado de la sección de uso de IA de M3, `docs/modules/M3.md`, honesto y corto.)
 
 - **Herramienta:** Claude (Anthropic). Los cuatro integrantes la usaron para
   escribir y depurar código, analizar resultados y redactar el texto del reporte.
@@ -527,14 +527,14 @@ La sustentación es a más tardar el lunes 23 de noviembre, máximo 10 minutos.
 
 - Dimensiones 1/2/3 y latencia p50 de la línea base M2 y del RAG avanzado M3, y los
   splits answerable/adversarial: `reports/scorecard_m3.csv`,
-  `reports/latency_m3.csv`, tablas M2/M3 del `README.md`.
+  `reports/latency_m3.csv`, tablas de `docs/modules/M2.md` y `M3.md`.
 - La ablación de recuperación (sin híbrido / sin rerank / sin HyDE):
-  `reports/scorecard_m3.csv`, lectura en `README.md`.
+  `reports/scorecard_m3.csv`, lectura en `docs/modules/M3.md`.
 - Los casos del análisis de errores y el comportamiento del agente:
-  `reports/replies_m3.json`, `reports/scorecard_m3_detail.json`, lectura honesta del
-  `README.md`.
+  `reports/replies_m3.json`, `reports/scorecard_m3_detail.json`, lectura honesta de
+  `docs/modules/M3.md`.
 - Sesgo del juez (50% de volteo de posición, adv03 de 1 a 5 por longitud):
-  `reports/scorecard_baseline_detail.json`, lectura M2 del `README.md`.
+  `reports/scorecard_baseline_detail.json`, lectura en `docs/modules/M2.md`.
 - Métrica de éxito, usuario, modelo base y ética: `docs/PROJECT_DEFINITION.md`,
   `docs/RESULTS_REPORT.md`, `docs/DATASET.md`.
 

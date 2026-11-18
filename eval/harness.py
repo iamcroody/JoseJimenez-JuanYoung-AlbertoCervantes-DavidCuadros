@@ -34,8 +34,8 @@ answer names one of dozens of valid exercises, so a threshold would fail correct
 answers and pass confident inventions that happen to be worded alike. The
 catalog is the only thing here that knows what is real.
 
-Bias handling lives in `PositionBiasProbe` and `length_bias_probe` — see the
-README section on judge bias.
+Bias handling lives in `PositionBiasProbe` and `length_bias_probe`; the judge
+bias section of docs/modules/M2.md explains what they found.
 """
 
 import functools

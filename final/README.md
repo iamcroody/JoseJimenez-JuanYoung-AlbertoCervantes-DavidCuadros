@@ -2,6 +2,8 @@
 
 Esta carpeta reúne la entrega final del proyecto: la técnica de eficiencia,
 el despliegue, el reporte y el material de sustentación. Aquí vive su índice.
+El informe técnico de M5 en inglés (eficiencia, despliegue y CI) está en
+[`docs/modules/M5.md`](../docs/modules/M5.md).
 
 ## Índice
 
