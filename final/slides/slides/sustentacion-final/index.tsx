@@ -741,7 +741,7 @@ const Efficiency: Page = () => (
       No se cumplió: ahorra memoria, pero acierta la mitad, tarda casi el triple y deja de decir "no sé". Por eso el sistema en línea usa 16 bits.
     </p>
     <p style={{ fontFamily: MONO, fontSize: 22, color: MUTED_CREAM, marginTop: 20 }}>
-      reports/efficiency_m5.csv · final/efficiency/RESULTS.md
+      RTX 4060, no el T4 de la página anterior: cada comparación es en una sola máquina · reports/efficiency_m5.csv
     </p>
   </Shell>
 );
@@ -869,25 +869,25 @@ con lo que tiene en casa, o le decimos que no cuando no hay uno seguro. Presenta
 Decisión que toma: qué ejercicio hacer con lo que tiene.
 Hoy: se lo salta o improvisa sin saber si funciona o si es seguro. (40 segundos)`,
   `Esta es la métrica que importa para esa decisión, no para el modelo.
-Leer las tres comprobaciones. Recalcar que decir que no también es una buena respuesta.
-Es la dimensión 3 del harness. (45 segundos)`,
+Leer las tres comprobaciones; decir que no también es una buena respuesta. (35 segundos)`,
   `Recorrer el dibujo de izquierda a derecha, revelando cada caja.
-El modelo de M1 nunca habla solo: antes busca en el catálogo (M3) y después lo que dice se comprueba
-contra el catálogo (M2 y el final). Corre en un Space con GPU prestada y cada petición queda en W&B.
-(1 minuto)`,
+El modelo de M1 nunca habla solo: antes busca en el catálogo (M3) y lo que dice se comprueba contra el
+catálogo. Corre en un Space con GPU prestada y cada petición queda en W&B. (45 segundos)`,
   `Cambiar al Space. Hacer los tres casos en este orden: fácil, difícil, trampa.
-Cada petición tarda unos 10 a 15 segundos. Si el Space falla, usar el video de respaldo.
-Al final abrir "Estado del sistema" para mostrar el health check. (2 minutos)`,
+Cada petición tarda unos 10 a 15 segundos: hablar mientras carga. Si el Space falla, usar el video de respaldo.
+Si sobra tiempo, abrir "Estado del sistema" para mostrar el health check. (1 minuto 40 segundos)`,
   `Mismas 14 preguntas y misma vara para todas las filas. Las barras crecen solas al entrar.
 Sin ajustar: 0 por ciento. Ajustado: 21,4. Ajustado y buscando: 42,9.
 Los casos trampa pasan de 0 a 3 de 4, y los pasos ahora son los del catálogo. (1 minuto)`,
-  `El costo: buscar duplica el tiempo, de 7,9 a 15,2 segundos en un T4.
+  `El costo: buscar duplica el tiempo, de 7,9 a 15,2 segundos, medido en un T4 de Colab.
 El agente con herramienta tardaba 38,9 segundos y acertaba menos, por eso no está en el despliegue.
 (40 segundos)`,
   `La técnica de eficiencia: cuantizar el generador a 4 bits. El presupuesto lo fijamos antes de medir.
 A 4 bits la memoria baja de 4.221 a 2.370 MB, pero los aciertos caen de 42,9 a 21,4 por ciento,
 la consulta pasa de 18 a 48 segundos y en los casos trampa deja de decir "no sé" (de 3 de 4 a 0 de 4).
-No se cumplió el presupuesto, así que el sistema en línea usa 16 bits. Medido en la misma GPU las dos versiones. (50 segundos)`,
+No se cumplió el presupuesto, así que el sistema en línea usa 16 bits.
+Si preguntan por qué aquí el antes es 17,9 s y no 15,2 s: esta tabla se midió en una RTX 4060, no en el T4;
+cada comparación es dentro de una sola máquina. (50 segundos)`,
   `Lo que falla, medido en 60 combinaciones fuera del eval set.
 Responde poco: 7 de 49. Pero nunca inventa: 11 de 11 rechazos correctos y 0 ejercicios inventados.
 El arreglo es filtrar la búsqueda por la clase de equipo. (50 segundos)`,
