@@ -1,14 +1,16 @@
-# Dependencias del Space (Módulo 5, despliegue). Versiones EXACTAS (no rangos),
-# reproducibles en un Colab T4 gratuito y en Hugging Face Spaces (SDK=gradio).
+# Dependencias para correr final/deploy/app.py en Colab o en un computador con
+# GPU (el respaldo de la demo, con SHARE=1). El Space de ZeroGPU usa su propio
+# archivo, final/deploy/space/requirements.txt.
 #
-# El stack de inferencia es el MISMO que m3/requirements.txt y
-# final/efficiency/requirements.txt para que el índice RAG, el harness y el
-# generador se construyan igual que en M3/M5-eficiencia (sin deriva de versiones).
+# torch NO va aquí: se usa el que trae el entorno (Colab lo preinstala con su
+# build de CUDA; localmente lo pone `uv sync`). Reinstalarlo en Colab baja más
+# de 2 GB y puede romper la build de CUDA del runtime.
+#
+# El stack de inferencia es el MISMO que m3/requirements.txt, que es lo que
+# registró la corrida de M3 en Colab (reports/scorecard_m3_detail.json).
 
-# UI del Space.
-gradio==5.9.1
+gradio==6.30.0
 
-# Stack de inferencia M3 (idéntico a m3/requirements.txt).
 transformers==5.16.1
 peft==0.20.0
 sentence-transformers==6.0.1
@@ -17,14 +19,12 @@ rouge_score==0.1.2
 opentelemetry-api==1.42.1
 opentelemetry-sdk==1.42.1
 
-# Ruta cuantizada int4 (nf4) de FEAT-002, usada cuando QUANTIZED=1. Mismo pin que
-# final/efficiency/requirements.txt; 0.44.1 funciona con la build de torch del T4.
-bitsandbytes==0.44.1
+# Solo para QUANTIZED=1 (el generador int4). 0.44.1 no trae binario para CUDA
+# 13, que es lo que usa Colab (torch 2.11.0+cu130 en la corrida de M3); 0.50.2
+# sí (libbitsandbytes_cuda130.so).
+bitsandbytes==0.50.2
 
-# Observabilidad. wandb hace no-op elegante si falta WANDB_API_KEY (ver
-# wandb_utils.py), así que NO es una clave de pago obligatoria.
-wandb==0.18.7
-
-# torch: en Colab/Spaces con GPU viene preinstalado en la imagen; se pina para
-# reproducibilidad del entorno local. Ajustar a la build CUDA del Space si aplica.
-torch==2.5.1
+# No-op si falta WANDB_API_KEY (ver wandb_utils.py): no es una clave obligatoria.
+# 0.28.0 y no la última: desde 0.29.0 wandb exige opentelemetry >= 1.43, y el
+# stack de M3 fija 1.42.1 (chromadb). Con 0.31.0 pip no encuentra solución.
+wandb==0.28.0

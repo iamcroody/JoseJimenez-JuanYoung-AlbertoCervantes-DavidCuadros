@@ -1,4 +1,4 @@
-# Módulo 5: Despliegue (Hugging Face Spaces, Gradio)
+# Módulo 5: Despliegue (Space de ZeroGPU, con respaldo en Colab)
 
 App Gradio que corre el sistema **MacGyver Gym Rat** de punta a punta: recibe un
 músculo objetivo y un objeto casero, devuelve una recomendación de ejercicio del
@@ -13,39 +13,119 @@ No reimplementa nada: reutiliza el pipeline M3 (`m3/rag.py`, `m3/systems.py`,
 para el filtro, y el generador int4 de la feature de eficiencia
 (`final/efficiency/efficiency.py`) por la ruta cuantizada.
 
-## Enlaces (los llena el equipo tras el primer deploy)
+## Enlaces
 
-- **Space en vivo:** TODO: pegar aquí la URL pública tras desplegar
-  (`https://huggingface.co/spaces/<org>/macgyver-gym-rat`).
-- **Proyecto W&B:** TODO: pegar aquí el enlace del proyecto tras la primera
-  corrida con `WANDB_API_KEY` configurada
-  (`https://wandb.ai/<entidad>/macgyver-gym-rat-m5`).
-
-Son **placeholders** a propósito: el código los lee del entorno/secrets y no
-hay ninguna URL inventada.
+- **Space en vivo:** <https://huggingface.co/spaces/jayoungh/macgyver-gym-rat> (ZeroGPU, sirve la rama o el commit de
+  `REPO_REF`).
+- **Proyecto W&B:** <https://wandb.ai/jayoungh-me/macgyver-gym-rat-m5>. Cada run es un arranque del Space y se llama
+  "<dónde> · <cuándo arrancó> · <commit>"; los gráficos están en tres secciones
+  (latencia, uso, componentes) con la petición como eje X, y la tabla
+  "peticiones" tiene una fila por petición, sin texto libre del usuario.
 
 ## Archivos
 
 | Archivo | Qué hace |
 | --- | --- |
 | `app.py` | Blocks de Gradio, el manejador de petición de punta a punta, el filtro de producción y la resolución de imagen/GIF. Imports perezosos (no importa gradio/torch al cargarse). |
-| `health.py` | `health_check(state)` → liveness sin consulta real (modelos cargados + ping al índice Chroma). |
+| `health.py` | `health_check(state)` → liveness sin consulta real (modelos cargados + ping al índice Chroma, o en ZeroGPU que el índice tenga vectores). |
+| `embed_docs.py` | Calcula los embeddings del catálogo en un proceso aparte; solo lo usa el Space de ZeroGPU. |
 | `logging_utils.py` | Logger JSON estructurado por petición, sin PII. Esquema + validación. |
 | `wandb_utils.py` | Observabilidad W&B con no-op elegante si falta la clave. |
 | `selftest.py` | Self-test sin GPU/red (solo stdlib + numpy), con modelos mockeados. |
-| `requirements.txt` | Pines exactos para el Space. |
+| `requirements.txt` | Pines exactos para correr `app.py` en Colab o en un computador (respaldo). |
+| `space/` | Los tres archivos del repo del Space de ZeroGPU: `app.py` (clona este repo y corre `final/deploy/app.py`), `requirements.txt` y `README.md` (la configuración del Space). |
 
-## Correr localmente (con deps completas y GPU/Colab)
+## Dónde corre
+
+Hugging Face ya no deja crear Spaces de Gradio en CPU con cuentas gratuitas. El
+profesor permitió tres salidas: un Space con **ZeroGPU**, correr `app.py` en Colab
+o en un computador con un **enlace público**, u otro servicio gratuito avisándole.
+Usamos las dos primeras con el mismo archivo `app.py`; solo cambia cómo se lanza.
+El health check, el log JSON y W&B funcionan igual en las dos.
+
+### Principal: Space de ZeroGPU
+
+ZeroGPU presta una GPU solo mientras corre una petición. La cuenta que crea el
+Space debe tener más de 30 días y el correo verificado. La GPU la paga, de su
+cuota diaria, quien usa la demo (5 minutos al día con cuenta gratuita, 2 sin
+iniciar sesión); una petición son segundos.
+
+1. En huggingface.co: **New Space**, SDK **Gradio**, hardware **ZeroGPU**.
+2. Subir al repo del Space los tres archivos de `final/deploy/space/`
+   (`app.py`, `requirements.txt`, `README.md`) en su raíz.
+3. **Settings > Variables:** `REPO_REF` con la rama, tag o commit a servir. Para
+   la entrega, el commit que se presenta, así el Space no cambia solo.
+4. **Settings > Secrets:** `WANDB_API_KEY` (opcional; sin ella W&B hace no-op) y,
+   si se quiere otro nombre, `WANDB_PROJECT`. Nunca van en el repo.
+5. Al arrancar, `space/app.py` clona este repo en `REPO_REF` con el submódulo del
+   dataset (los repos de Spaces no siguen submódulos, y el catálogo con sus GIF
+   vive ahí) y corre `final/deploy/app.py`.
+
+Cómo usa la GPU (`app.py`): el generador se carga en `cuda` al arrancar, fuera de
+`@spaces.GPU`, como pide ZeroGPU. La GPU solo se pide dentro de `run_advanced`
+(`@spaces.GPU(duration=30)`), que corre el RAG avanzado de M3. Dos cosas que
+encontramos al probar el Space, y que el código ya resuelve:
+
+- **Nada de cálculo de torch en el proceso principal.** Codificar los 1324
+  documentos del catálogo ahí dejaba a todos los workers sin GPU ("No CUDA GPUs
+  are available" en `worker_init`). En ZeroGPU esos embeddings se calculan en un
+  proceso hijo (`embed_docs.py`). Los vectores son idénticos bit a bit a los del
+  proceso principal.
+- **Nada de Chroma dentro del worker.** Chroma 1.x corre sobre un pool de hilos
+  de Rust que no existe en el fork, y la consulta se quedaba esperando. En
+  ZeroGPU la búsqueda densa es exacta, un producto de matrices en la GPU sobre
+  los mismos vectores (`GpuDenseIndex`); el HNSW de Chroma aproxima esa misma
+  búsqueda.
+- **Nada de cálculo en CPU dentro del worker.** El worker es un fork del proceso
+  principal, y el pool de hilos de CPU de torch no sobrevive al fork: la
+  petición se quedaba colgada. El encoder de consultas y el reranker van en
+  `cuda`, como el generador.
+
+Tampoco se llama a `set_seed` en ZeroGPU: la decodificación es greedy, así que la
+semilla no cambia ninguna respuesta.
+
+### Respaldo: Colab o un computador con enlace público
 
 ```sh
+# Colab (torch ya viene instalado):
 pip install -r final/deploy/requirements.txt
-python final/deploy/app.py        # abre Gradio en http://0.0.0.0:7860
+SHARE=1 python final/deploy/app.py              # imprime https://xxxx.gradio.live
+SHARE=1 QUANTIZED=1 python final/deploy/app.py  # igual, con el generador int4
+
+# Un computador con el repo y uv (torch sale de uv.lock):
+SHARE=1 uv run --with-requirements final/deploy/requirements.txt python final/deploy/app.py
 ```
 
-Rutas estilo Colab: el repo se clona en
-`/content/JoseJimenez-JuanYoung-AlbertoCervantes-DavidCuadros`. `app.py` agrega
-`scripts/`, `eval/`, `m3/` y `final/efficiency/` a `sys.path` igual que los
-notebooks, así el traslado a Colab o al Space es directo.
+El enlace funciona mientras el proceso siga vivo, así que hay que lanzarlo antes
+de la sustentación y abrirlo desde otro dispositivo para comprobarlo. Cambia en
+cada corrida. Sin `SHARE=1`, la app queda solo en `http://127.0.0.1:7860`, y un
+túnel como `cloudflared tunnel --url http://localhost:7860` también la publica.
+
+### Qué corre en cada lugar
+
+| | Space de ZeroGPU | Colab T4 / computador |
+| --- | --- | --- |
+| Sistema | RAG avanzado de M3 (HyDE + híbrido + rerank), bge-small, top 8, pool 20 | el mismo |
+| Agente con `find_exercises` | no (ver abajo) | no |
+| Generador | Qwen3-1.7B + LoRA de M1, fusionado, **bf16** | fp16, o **int4** con `QUANTIZED=1` |
+| Encoder de consultas y reranker | GPU | GPU |
+| Embeddings del catálogo | proceso hijo, CPU | proceso principal, GPU |
+| Búsqueda densa | exacta, producto de matrices en GPU | Chroma (HNSW), como M3 |
+
+**El agente de M3 no se despliega.** En la tabla de M3 el agente
+(`sistema_final`) bajó la dimensión 3 de 42.9% a 28.6% y subió la latencia
+mediana de 15.2 s a 38.9 s frente al RAG avanzado, que es el que se sirve. Por
+eso `components_used` en el log nunca trae `tool`. La justificación completa
+está en `final/reporte.md`, sección 3.
+
+El retriever sale de `final/efficiency/efficiency.py::build_retriever`, el mismo
+que usa la fila "antes" de `notebooks/M5_efficiency.ipynb`, con las decisiones de
+la corrida final de M3. Las tablas del reporte se miden en el T4; el Space no se
+usa para medir. bf16 en el Space porque su GPU (RTX Pro 6000, Blackwell) lo tiene
+en hardware y le sobra memoria, y porque cuantizar con bitsandbytes sobre la CUDA
+emulada del arranque de ZeroGPU es la parte con más riesgo. Por eso el Space
+**no** corre la técnica de eficiencia: la técnica se mide en el T4, donde sí ahorra
+memoria, y se puede mostrar en vivo con el respaldo `QUANTIZED=1`.
 
 ## Self-test (sin GPU, sin red, sin gradio/torch/wandb/chromadb)
 
@@ -60,47 +140,27 @@ El self-test valida el esquema del log (y la ausencia de PII), la derivación de
 `components_used`/`valve_fired`, el `health_check` con loaders mockeados, y el
 filtro de producción + la resolución de imagen sobre un catálogo/dataset falsos.
 
-## Desplegar en Hugging Face Spaces
-
-1. **SDK del Space:** `gradio`. Punto de entrada: `app.py` en la raíz del repo del
-   Space (ver "Layout" abajo).
-2. **Dataset / catálogo:** el Space necesita `data/exercises-dataset/` (el
-   submódulo pineado al commit `8872272`), que contiene `data/exercises.json` y
-   las carpetas `images/` y `videos/`. Igual que en `notebooks/M3_rag.ipynb`, se
-   obtiene con:
-   ```sh
-   git clone --recurse-submodules <repo>
-   # o, si ya está clonado:
-   git submodule update --init --recursive
-   ```
-   Si el Space no permite submódulos, copiar `data/exercises-dataset/` al repo del
-   Space (incluyendo `images/` y `videos/`, necesarias para el componente visual).
-3. **Secrets (Settings → Repository secrets):**
-   - `WANDB_API_KEY` (opcional). Sin ella, la observabilidad W&B hace no-op y la
-     app corre igual (requisito: cero claves de pago obligatorias). **Nunca** se
-     commitea en el repo.
-   - `WANDB_PROJECT` (opcional), nombre del proyecto (por defecto
-     `macgyver-gym-rat-m5`).
-   - `QUANTIZED`: `1` para cargar el generador en int4 (nf4) de FEAT-002; `0`
-     (por defecto) para fp16.
-
 ## Health check
 
 - **Función:** `health.health_check(state)`.
 - **Expuesto en la UI:** acordeón "Health check (liveness, sin consulta real)" →
   botón "Ver estado", que imprime el JSON del estado.
-- **Endpoint HTTP `/health`:** para un endpoint dedicado, montar `health_check`
-  en un FastAPI junto a `demo.app` de Gradio, p. ej.:
-  ```python
-  demo, state, _ = build_interface()
-  app_fastapi = demo.app                      # Gradio monta FastAPI por dentro
-  @app_fastapi.get("/health")
-  def _health():
-      return health_check(state)
+- **Endpoint de API `health`:** el mismo botón se publica con
+  `api_name="health"`, así que se consulta sin abrir la página ni hacer una
+  pregunta real:
+  ```sh
+  URL=https://<usuario>-<space>.hf.space   # o el enlace gradio.live del respaldo
+  ID=$(curl -s -X POST $URL/gradio_api/call/health \
+       -H "Content-Type: application/json" -d '{"data": []}' \
+       | python -c "import json,sys; print(json.load(sys.stdin)['event_id'])")
+  curl -sN $URL/gradio_api/call/health/$ID
   ```
+  o, con `gradio_client`: `Client(URL).predict(api_name="/health")`.
 - **Qué devuelve:** `{status, models_loaded, index_ready, git_commit, timestamp,
   quantized, checks}`. Comprueba que el generador y el embedder cargaron y que un
-  ping trivial a Chroma responde (**sin** ejecutar una recomendación). `status` es
+  ping trivial a Chroma responde (**sin** ejecutar una recomendación). En ZeroGPU,
+  donde el proceso principal no puede calcular nada, comprueba que el índice en GPU
+  tenga sus vectores. `status` es
   `ok` / `degraded` (índice caído) / `down` (modelos no cargados).
 
 ## Formato del logging
@@ -146,29 +206,3 @@ entrena el músculo pedido y usa la clase de equipo del objeto. Si no pasa, la a
 muestra un mensaje de **"no safe option"** en vez de una recomendación no
 verificada. Las imágenes provienen del **catálogo** (no son generadas por IA) y la
 UI deja claro que el sistema **sugiere**; la persona decide.
-
-## Si no cabe en el hardware gratuito del Space
-
-El generador fp16 (Qwen3-1.7B + LoRA) más el índice denso, el reranker y HyDE
-pueden no caber en el hardware gratuito de Spaces. En ese caso se despliega la
-versión **cuantizada** (`QUANTIZED=1`), que carga el generador en **int4 (nf4)**
-(la técnica de eficiencia de FEAT-002) reduciendo la VRAM del modelo base sin
-tocar el pipeline de RAG. La tabla antes/después y el presupuesto de pérdida
-aceptable están en `final/efficiency/`. Lo que se recorta en la versión reducida
-(p. ej. desactivar HyDE, que es una generación extra, o reducir el pool del
-reranker) se documenta aquí y en `final/reporte.md` para que la degradación sea
-explícita, como pide el PDF.
-
-## Layout del Space (recomendado)
-
-HF Spaces espera `app.py` en la **raíz** del repo del Space. Opciones:
-
-- **Preferida (y permitida por el PDF):** crear un **repo de Space aparte** cuyo
-  `app.py` haga `sys.path`-insert del repo principal clonado (submódulo o
-  subcarpeta) y llame a `final.deploy.app.build_interface()`. Así el repo del
-  proyecto queda limpio y el Space es desplegable independientemente.
-- **Alternativa:** configurar el repo principal como Space y añadir un `app.py`
-  en la raíz que reexporte `final/deploy/app.py`.
-
-Este README documenta ambas; **no** se crean repos externos ni se hace push desde
-aquí (eso lo hace el equipo al desplegar).

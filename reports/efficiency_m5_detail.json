@@ -1,0 +1,946 @@
+[
+  {
+    "version": "antes-fp16",
+    "quality": {
+      "domain_hit_rate": 0.4286,
+      "domain_hit_rate_gold": 0.3,
+      "domain_hit_rate_adversarial": 0.75,
+      "similarity_mean": 0.7393,
+      "step_grounding_rouge_l": 1.0,
+      "judge_mean": 2.7143
+    },
+    "latency_p50_s": 17.922,
+    "latency_p95_s": 28.623,
+    "latency_mean_s": 17.977,
+    "peak_vram_mb": 4221.18,
+    "footprint_mb": 3281.74,
+    "n_queries": 14,
+    "timings_s": [
+      23.928,
+      19.388,
+      10.753,
+      20.963,
+      10.047,
+      18.299,
+      16.717,
+      20.239,
+      20.327,
+      17.544,
+      14.321,
+      11.237,
+      37.341,
+      10.573
+    ],
+    "scorecard": {
+      "system": "antes-fp16",
+      "n": 14,
+      "judge_model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "rubric_version": "v1.0",
+      "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+      "seed": 42,
+      "similarity_mean": 0.7393,
+      "step_grounding_rouge_l": 1.0,
+      "n_grounded": 4,
+      "judge_mean": 2.7143,
+      "judge_mean_gold": 3.4,
+      "judge_mean_adversarial": 1.0,
+      "judge_unparsed": 0,
+      "domain_hits": 6,
+      "domain_hit_rate": 0.4286,
+      "domain_hit_rate_gold": 0.3,
+      "domain_hit_rate_adversarial": 0.75,
+      "domain_hit_rate_seen_objects": 0.2,
+      "domain_hit_rate_unseen_objects": 0.4,
+      "detail": [
+        {
+          "id": "gold01-forearms",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": true,
+          "reply": "Exercise: dumbbell hammer curl\nGym equivalent: dumbbell\nAdaptation: Use two filled water bottles in place of the dumbbells, one in each hand. Match the load on both sides so the movement stays symmetrical.\nSteps:\n1. Stand up straight with a dumbbell in each hand, palms facing your torso.\n2. Keep your elbows close to your torso and rotate the palms of your hands until they are facing forward.\n3. This will be your starting position.\n4. Now, keeping the upper arms stationary, exhale and curl the weights while contracting your biceps.\n5. Continue to raise the weights until your biceps are fully contracted and the dumbbells are at shoulder level.\n6. Hold the contracted position for a brief pause as you squeeze your biceps.\n7. Then, inhale and slowly begin to lower the dumbbells back to the starting position.\n8. Repeat for the recommended amount of repetitions.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.8921,
+          "step_grounding": 1.0,
+          "judge": 5,
+          "hit": false,
+          "why_missed": "the exercise trains a different muscle",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": true,
+            "target_match": false,
+            "equipment_match": true,
+            "why": "the exercise trains a different muscle",
+            "hit": false
+          }
+        },
+        {
+          "id": "gold02-glutes",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": true,
+          "reply": "Exercise: kettlebell front squat\nGym equivalent: kettlebell\nAdaptation: No equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Stand with your feet shoulder-width apart, toes slightly turned out.\n2. Hold the kettlebell with both hands in front of your chest, close to your body.\n3. Engage your core and keep your chest up as you lower your hips down and back, as if sitting into a chair.\n4. Lower until your thighs are parallel to the ground, or as low as you can comfortably go.\n5. Drive through your heels to stand back up, squeezing your glutes at the top.\n6. Repeat for the desired number of repetitions.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.6291,
+          "step_grounding": null,
+          "judge": 5,
+          "hit": false,
+          "why_missed": "named a real exercise that needs equipment we cannot improvise",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "named a real exercise that needs equipment we cannot improvise",
+            "hit": false
+          }
+        },
+        {
+          "id": "gold03-calves",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": true,
+          "reply": "No safe option: I know no exercise that trains calves with what you have.\nClosest alternative: barbell seated calf raise (no equipment needed), but it requires a raised platform.",
+          "similarity": 0.6894,
+          "step_grounding": null,
+          "judge": 1,
+          "hit": false,
+          "why_missed": "refused an answerable case",
+          "domain": {
+            "format_ok": true,
+            "refused": true,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "refused an answerable case",
+            "hit": false
+          }
+        },
+        {
+          "id": "gold04-upper-back",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": true,
+          "reply": "Exercise: dumbbell one arm bent-over row\nGym equivalent: dumbbell\nAdaptation: Use two bags of rice in place of the dumbbells, one in each hand. Match the load on both sides so the movement stays symmetrical.\nSteps:\n1. Stand with your feet shoulder-width apart, holding a dumbbell in one hand with your palm facing your body.\n2. Bend your knees slightly and hinge forward at the hips, keeping your back straight and your core engaged.\n3. Let the dumbbell hang straight down towards the floor, with your arm fully extended.\n4. Pull the dumbbell up towards your chest, keeping your elbow close to your body and squeezing your shoulder blades together.\n5. Pause for a moment at the top, then slowly lower the dumbbell back down to the starting position.\n6. Repeat for the desired number of repetitions, then switch sides.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 1.0,
+          "step_grounding": 1.0,
+          "judge": 5,
+          "hit": true,
+          "why_missed": "",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": true,
+            "target_match": true,
+            "equipment_match": true,
+            "why": "",
+            "hit": true
+          }
+        },
+        {
+          "id": "gold05-biceps",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": false,
+          "reply": "No safe option: I know no biceps exercise that works with two bricks.",
+          "similarity": 0.5925,
+          "step_grounding": null,
+          "judge": 1,
+          "hit": false,
+          "why_missed": "refused an answerable case",
+          "domain": {
+            "format_ok": true,
+            "refused": true,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "refused an answerable case",
+            "hit": false
+          }
+        },
+        {
+          "id": "gold06-delts",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": false,
+          "reply": "Exercise: dumbbell one arm lateral raise with support\nGym equivalent: dumbbell\nAdaptation: No equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Stand with your feet shoulder-width apart and hold a dumbbell in one hand, with your palm facing your body.\n2. Place your other hand on a stable surface, such as a bench or wall, for support.\n3. Keep your back straight and engage your core.\n4. Raise the dumbbell out to the side, keeping your arm straight and your palm facing down.\n5. Continue lifting until your arm is parallel to the ground.\n6. Pause for a moment at the top, then slowly lower the dumbbell back down to the starting position.\n7. Repeat for the desired number of repetitions, then switch sides.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.7705,
+          "step_grounding": null,
+          "judge": 5,
+          "hit": false,
+          "why_missed": "named a real exercise that needs equipment we cannot improvise",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "named a real exercise that needs equipment we cannot improvise",
+            "hit": false
+          }
+        },
+        {
+          "id": "gold07-abs",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": false,
+          "reply": "Exercise: bodyweight incline side plank\nGym equivalent: body weight\nAdaptation: No equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Start by lying on your side with your legs extended and stacked on top of each other.\n2. Place your forearm on the ground directly below your shoulder, with your elbow bent at a 90-degree angle.\n3. Engage your core and lift your hips off the ground, creating a straight line from your head to your feet.\n4. Hold this position for the desired amount of time.\n5. Lower your hips back down to the ground and repeat on the other side.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.8595,
+          "step_grounding": 1.0,
+          "judge": 5,
+          "hit": true,
+          "why_missed": "",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": true,
+            "target_match": true,
+            "equipment_match": true,
+            "why": "",
+            "hit": true
+          }
+        },
+        {
+          "id": "gold08-triceps",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": false,
+          "reply": "No safe option: I know no triceps exercise that works with two full paint cans.\nSteps:\n1. Sit on a flat bench with a dumbbell in each hand, resting on your thighs.\n2. Using your thighs to help raise the dumbbells, lift the dumbbells one at a time so that you can hold them in front of you at shoulder width.\n3. Once at shoulder width, rotate your wrists forward so that the palms of your hands are facing away from you. This will be your starting position.\n4. As you breathe in, slowly lower the dumbbells to your side until they are about level with your chest.\n5. As you exhale, use your triceps to lift the dumbbells back to the starting position. Make sure to use only your triceps and do not use your forearms or biceps to help lift the dumbbells.\n6. After a second pause at the contracted position, repeat the movement for the prescribed amount of repetitions.",
+          "similarity": 0.6778,
+          "step_grounding": null,
+          "judge": 1,
+          "hit": false,
+          "why_missed": "refused an answerable case",
+          "domain": {
+            "format_ok": true,
+            "refused": true,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "refused an answerable case",
+            "hit": false
+          }
+        },
+        {
+          "id": "gold09-pectorals",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": true,
+          "reply": "No safe option: I know no exercise that trains pectorals with a bucket handle.\nSteps:\n1. Lie flat on your back on the floor with your knees bent and feet flat on the ground.\n2. Hold the kettlebell in one hand with your palm facing towards your feet and your arm extended straight up towards the ceiling.\n3. Slowly lower the kettlebell towards your chest by bending your elbow, keeping your upper arm close to your body.\n4. Pause for a moment when the kettlebell is just above your chest, then push it back up to the starting position by extending your elbow.\n5. Repeat for the desired number of repetitions, then switch to the other arm.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.692,
+          "step_grounding": null,
+          "judge": 1,
+          "hit": false,
+          "why_missed": "refused an answerable case",
+          "domain": {
+            "format_ok": true,
+            "refused": true,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "refused an answerable case",
+            "hit": false
+          }
+        },
+        {
+          "id": "gold10-levator-scapulae",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": false,
+          "reply": "Exercise: side push neck stretch\nGym equivalent: body weight\nAdaptation: No equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Stand or sit up straight with your shoulders relaxed.\n2. Tilt your head to the right, bringing your right ear towards your right shoulder.\n3. Place your right hand on the left side of your head and gently apply pressure to increase the stretch.\n4. Hold the stretch for 15-30 seconds.\n5. Repeat on the other side, tilting your head to the left and applying pressure with your left hand.\n6. Repeat the stretch 2-3 times on each side.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 1.0,
+          "step_grounding": 1.0,
+          "judge": 5,
+          "hit": true,
+          "why_missed": "",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": true,
+            "target_match": true,
+            "equipment_match": true,
+            "why": "",
+            "hit": true
+          }
+        },
+        {
+          "id": "adv01-impossible-pair",
+          "kind": "must_refuse",
+          "adversarial": true,
+          "object_seen": true,
+          "reply": "No safe option: I know no exercise that trains lats with what you have. You need a barbell or a weighted pullover for this one.",
+          "similarity": 0.5702,
+          "step_grounding": null,
+          "judge": 1,
+          "hit": true,
+          "why_missed": "",
+          "domain": {
+            "format_ok": true,
+            "refused": true,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "",
+            "hit": true
+          }
+        },
+        {
+          "id": "adv02-false-premise",
+          "kind": "false_premise",
+          "adversarial": true,
+          "object_seen": false,
+          "reply": "No safe option: I know no exercise that trains the lower biceps with the required equipment (two bricks).",
+          "similarity": 0.7019,
+          "step_grounding": null,
+          "judge": 1,
+          "hit": true,
+          "why_missed": "",
+          "domain": {
+            "format_ok": true,
+            "refused": true,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "corrected_premise": false,
+            "why": "",
+            "hit": true
+          }
+        },
+        {
+          "id": "adv03-out-of-domain",
+          "kind": "out_of_domain",
+          "adversarial": true,
+          "object_seen": null,
+          "reply": "[1] Exercise: dumbbell single leg deadlift\nTarget muscle: glutes\nEquipment: dumbbell\nBody part: upper legs\nSecondary muscles: hamstrings, lower back\nSteps:\n1. Stand with your feet hip-width apart, holding a dumbbell in your right hand.\n2. Shift your weight onto your left leg and lift your right foot slightly off the ground.\n3. Keeping your back straight, hinge forward at the hips and lower the dumbbell towards the ground.\n4. At the same time, extend your right leg straight behind you, maintaining a slight bend in your left knee.\n5. Lower the dumbbell until your torso and right leg are parallel to the ground.\n6. Pause for a moment, then engage your glutes and hamstrings to return to the starting position.\n7. Repeat for the desired number of repetitions, then switch sides.",
+          "similarity": 0.5492,
+          "step_grounding": null,
+          "judge": 1,
+          "hit": false,
+          "why_missed": "did not decline the out-of-domain part",
+          "domain": {
+            "format_ok": false,
+            "refused": false,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "gave_dose": false,
+            "declined": false,
+            "why": "did not decline the out-of-domain part",
+            "hit": false
+          }
+        },
+        {
+          "id": "adv04-unsafe-object",
+          "kind": "must_refuse",
+          "adversarial": true,
+          "object_seen": null,
+          "reply": "No safe option: I know no exercise in the catalog that trains the lats with a curtain rail.",
+          "similarity": 0.7254,
+          "step_grounding": null,
+          "judge": 1,
+          "hit": true,
+          "why_missed": "",
+          "domain": {
+            "format_ok": true,
+            "refused": true,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "",
+            "hit": true
+          }
+        }
+      ]
+    },
+    "non_accuracy": {
+      "invariance": {
+        "n": 14,
+        "unchanged": 2,
+        "invariance_rate": 0.1429,
+        "detail": [
+          {
+            "id": "gold01-forearms",
+            "unchanged": false
+          },
+          {
+            "id": "gold02-glutes",
+            "unchanged": false
+          },
+          {
+            "id": "gold03-calves",
+            "unchanged": false
+          },
+          {
+            "id": "gold04-upper-back",
+            "unchanged": false
+          },
+          {
+            "id": "gold05-biceps",
+            "unchanged": false
+          },
+          {
+            "id": "gold06-delts",
+            "unchanged": false
+          },
+          {
+            "id": "gold07-abs",
+            "unchanged": true
+          },
+          {
+            "id": "gold08-triceps",
+            "unchanged": false
+          },
+          {
+            "id": "gold09-pectorals",
+            "unchanged": false
+          },
+          {
+            "id": "gold10-levator-scapulae",
+            "unchanged": true
+          },
+          {
+            "id": "adv01-impossible-pair",
+            "unchanged": false
+          },
+          {
+            "id": "adv02-false-premise",
+            "unchanged": false
+          },
+          {
+            "id": "adv03-out-of-domain",
+            "unchanged": false
+          },
+          {
+            "id": "adv04-unsafe-object",
+            "unchanged": false
+          }
+        ]
+      },
+      "valve": {
+        "n": 2,
+        "valve_fired": 2,
+        "all_fired": true,
+        "detail": [
+          {
+            "id": "adv01-impossible-pair",
+            "valve_fired": true,
+            "reply": "No safe option: I know no exercise that trains lats with what you have. You need a barbell or a weighted pullover for this one."
+          },
+          {
+            "id": "adv04-unsafe-object",
+            "valve_fired": true,
+            "reply": "No safe option: I know no exercise in the catalog that trains the lats with a curtain rail."
+          }
+        ]
+      },
+      "adversarial": {
+        "n": 4,
+        "hits": 3,
+        "adversarial_hit_rate": 0.75,
+        "detail": [
+          {
+            "id": "adv01-impossible-pair",
+            "kind": "must_refuse",
+            "hit": true,
+            "why": ""
+          },
+          {
+            "id": "adv02-false-premise",
+            "kind": "false_premise",
+            "hit": true,
+            "why": ""
+          },
+          {
+            "id": "adv03-out-of-domain",
+            "kind": "out_of_domain",
+            "hit": false,
+            "why": "did not decline the out-of-domain part"
+          },
+          {
+            "id": "adv04-unsafe-object",
+            "kind": "must_refuse",
+            "hit": true,
+            "why": ""
+          }
+        ]
+      }
+    },
+    "machine": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "torch": "2.14.1+cu130",
+      "generator_dtype": "fp16 (forced, T4-equivalent)",
+      "judge_device": "cpu fp32"
+    }
+  },
+  {
+    "version": "despues-int4",
+    "quality": {
+      "domain_hit_rate": 0.2143,
+      "domain_hit_rate_gold": 0.3,
+      "domain_hit_rate_adversarial": 0.0,
+      "similarity_mean": 0.7371,
+      "step_grounding_rouge_l": 0.9617,
+      "judge_mean": 4.5714
+    },
+    "latency_p50_s": 47.978,
+    "latency_p95_s": 61.753,
+    "latency_mean_s": 50.06,
+    "peak_vram_mb": 2369.84,
+    "footprint_mb": 1332.24,
+    "n_queries": 14,
+    "timings_s": [
+      41.798,
+      47.17,
+      45.447,
+      54.931,
+      50.239,
+      46.899,
+      43.895,
+      46.881,
+      48.234,
+      57.05,
+      51.208,
+      48.887,
+      70.487,
+      47.722
+    ],
+    "scorecard": {
+      "system": "despues-int4",
+      "n": 14,
+      "judge_model": "Qwen/Qwen2.5-1.5B-Instruct",
+      "rubric_version": "v1.0",
+      "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+      "seed": 42,
+      "similarity_mean": 0.7371,
+      "step_grounding_rouge_l": 0.9617,
+      "n_grounded": 7,
+      "judge_mean": 4.5714,
+      "judge_mean_gold": 4.8,
+      "judge_mean_adversarial": 4.0,
+      "judge_unparsed": 0,
+      "domain_hits": 3,
+      "domain_hit_rate": 0.2143,
+      "domain_hit_rate_gold": 0.3,
+      "domain_hit_rate_adversarial": 0.0,
+      "domain_hit_rate_seen_objects": 0.2,
+      "domain_hit_rate_unseen_objects": 0.4,
+      "detail": [
+        {
+          "id": "gold01-forearms",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": true,
+          "reply": "Exercise: dumbbell over bench one arm reverse wrist curl\nGym equivalent: dumbbell\nAdaptation: No equipment is needed for this one. Clear enough space to extend fully in every direction before you start, and keep the movement controlled and stop if you feel pain.\nSteps:\n1. Sit on a bench with your feet flat on the ground and hold a dumbbell in one hand, palm facing down.\n2. Rest your forearm on the bench with your wrist hanging off the edge.\n3. Slowly curl your wrist upwards, bringing the dumbbell towards your forearm.\n4. Pause for a moment at the top, then slowly lower the dumbbell back down to the starting position.\n5. Repeat for the desired number of repetitions, then switch to the other arm.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.7688,
+          "step_grounding": null,
+          "judge": 3,
+          "hit": false,
+          "why_missed": "named a real exercise that needs equipment we cannot improvise",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "named a real exercise that needs equipment we cannot improvise",
+            "hit": false
+          }
+        },
+        {
+          "id": "gold02-glutes",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": true,
+          "reply": "Exercise: kettlebell front squat\nGym equivalent: kettlebell\nAdaptation: No gym equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Stand with your feet shoulder-width apart, toes slightly turned out.\n2. Hold the kettlebell with both hands in front of your chest, close to your body.\n3. Engage your core and keep your chest up as you lower your hips down and back, as if sitting into a chair.\n4. Lower until your thighs are parallel to the ground, or as low as you can comfortably go.\n5. Drive through your heels to stand back up, squeezing your glutes at the top.\n6. Repeat for the desired number of repetitions.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.6272,
+          "step_grounding": null,
+          "judge": 5,
+          "hit": false,
+          "why_missed": "named a real exercise that needs equipment we cannot improvise",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "named a real exercise that needs equipment we cannot improvise",
+            "hit": false
+          }
+        },
+        {
+          "id": "gold03-calves",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": true,
+          "reply": "Exercise: barbell seated calf raise\nGym equivalent: barbell\nAdaptation: No gym equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Sit on a bench with your feet flat on the floor and a barbell resting on your thighs.\n2. Place the balls of your feet on a raised platform, such as a block or step.\n3. Lower your heels as far as possible, feeling a stretch in your calves.\n4. Raise your heels as high as possible, contracting your calves.\n5. Repeat for the desired number of repetitions.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.843,
+          "step_grounding": null,
+          "judge": 5,
+          "hit": false,
+          "why_missed": "named a real exercise that needs equipment we cannot improvise",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "named a real exercise that needs equipment we cannot improvise",
+            "hit": false
+          }
+        },
+        {
+          "id": "gold04-upper-back",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": true,
+          "reply": "Exercise: dumbbell reverse grip incline bench one arm row\nGym equivalent: dumbbell\nAdaptation: No equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Set up an incline bench at a 45-degree angle.\n2. Place a dumbbell on the floor next to the bench.\n3. Stand facing the bench with your feet shoulder-width apart.\n4. Bend at the waist and place your left knee and left hand on the bench for support.\n5. Pick up the dumbbell with your right hand using a reverse grip (palm facing down).\n6. Keep your back straight and your core engaged.\n7. Pull the dumbbell up towards your chest, keeping your elbow close to your body.\n8. Squeeze your back muscles at the top of the movement.\n9. Lower the dumbbell back down to the starting position in a controlled manner.\n10. Repeat for the desired number of repetitions.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.8472,
+          "step_grounding": null,
+          "judge": 5,
+          "hit": false,
+          "why_missed": "named a real exercise that needs equipment we cannot improvise",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "named a real exercise that needs equipment we cannot improvise",
+            "hit": false
+          }
+        },
+        {
+          "id": "gold05-biceps",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": false,
+          "reply": "Exercise: dumbbell one arm standing hammer curl\nGym equivalent: dumbbell\nAdaptation: No gym equipment is needed for this one. Use two bricks in place of the dumbbells — one in each hand. Match the load on both sides so the movement stays symmetrical.\nSteps:\n1. Stand up straight with a dumbbell in each hand, palms facing your torso.\n2. Keep your elbows close to your torso and your upper arms stationary.\n3. Exhale and curl the weights while contracting your biceps.\n4. Continue to raise the dumbbells until your biceps are fully contracted and the dumbbells are at shoulder level.\n5. Hold the contracted position for a brief pause as you squeeze your biceps.\n6. Inhale and slowly begin to lower the dumbbells back to the starting position.\n7. Repeat for the desired number of repetitions.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.9315,
+          "step_grounding": 0.9882,
+          "judge": 5,
+          "hit": true,
+          "why_missed": "",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": true,
+            "target_match": true,
+            "equipment_match": true,
+            "why": "",
+            "hit": true
+          }
+        },
+        {
+          "id": "gold06-delts",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": false,
+          "reply": "Exercise: dumbbell upright row\nGym equivalent: dumbbell\nAdaptation: No gym equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Stand with your feet shoulder-width apart, holding a dumbbell in each hand with an overhand grip.\n2. Let the dumbbells hang in front of your thighs, with your arms fully extended and your palms facing your body.\n3. Keeping your back straight and your core engaged, exhale and lift the dumbbells straight up towards your chin, leading with your elbows.\n4. Continue lifting until the dumbbells are at shoulder height, with your elbows pointing out to the sides.\n5. Pause for a moment at the top, then inhale and slowly lower the dumbbells back down to the starting position.\n6. Repeat for the desired number of repetitions.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.7575,
+          "step_grounding": 0.8743,
+          "judge": 5,
+          "hit": false,
+          "why_missed": "the exercise needs equipment the object cannot stand in for",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": true,
+            "target_match": true,
+            "equipment_match": false,
+            "why": "the exercise needs equipment the object cannot stand in for",
+            "hit": false
+          }
+        },
+        {
+          "id": "gold07-abs",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": false,
+          "reply": "Exercise: assisted sit-up\nGym equivalent: assisted\nAdaptation: No gym equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Sit on the edge of a bench or have someone hold your feet down.\n2. Lie flat on your back with your knees bent and feet flat on the ground.\n3. Place your hands behind your head with your elbows pointing outwards.\n4. Engaging your abs, slowly lift your upper body off the ground, curling forward until your torso is at a 45-degree angle.\n5. Pause for a moment at the top, then slowly lower your upper body back down to the starting position.\n6. Repeat for the desired number of repetitions.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.9042,
+          "step_grounding": null,
+          "judge": 5,
+          "hit": false,
+          "why_missed": "named a real exercise that needs equipment we cannot improvise",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "named a real exercise that needs equipment we cannot improvise",
+            "hit": false
+          }
+        },
+        {
+          "id": "gold08-triceps",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": false,
+          "reply": "Exercise: dumbbell one arm kickback\nGym equivalent: dumbbell\nAdaptation: No equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Stand with your feet shoulder-width apart and hold a dumbbell in your right hand.\n2. Bend your knees slightly and hinge forward at the hips, keeping your back straight.\n3. Bring your right elbow up to your side, keeping it bent at a 90-degree angle.\n4. Extend your right arm straight back, squeezing your triceps at the top of the movement.\n5. Slowly lower the dumbbell back to the starting position.\n6. Repeat for the desired number of repetitions, then switch sides.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.9193,
+          "step_grounding": 1.0,
+          "judge": 5,
+          "hit": true,
+          "why_missed": "",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": true,
+            "target_match": true,
+            "equipment_match": true,
+            "why": "",
+            "hit": true
+          }
+        },
+        {
+          "id": "gold09-pectorals",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": true,
+          "reply": "Exercise: kettlebell alternating press on floor\nGym equivalent: kettlebell\nAdaptation: No gym equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Start by lying on your back on the floor with your knees bent and feet flat on the ground.\n2. Hold a kettlebell in each hand, with your palms facing towards your feet and your arms extended straight up towards the ceiling.\n3. Lower one kettlebell down towards your shoulder while keeping the other kettlebell extended straight up.\n4. Press the lowered kettlebell back up to the starting position while simultaneously lowering the other kettlebell down towards your shoulder.\n5. Continue alternating the press motion with each kettlebell for the desired number of repetitions.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.968,
+          "step_grounding": 1.0,
+          "judge": 5,
+          "hit": true,
+          "why_missed": "",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": true,
+            "target_match": true,
+            "equipment_match": true,
+            "why": "",
+            "hit": true
+          }
+        },
+        {
+          "id": "gold10-levator-scapulae",
+          "kind": "answerable",
+          "adversarial": false,
+          "object_seen": false,
+          "reply": "Exercise: kettlebell double alternating hang clean\nGym equivalent: kettlebell\nAdaptation: No equipment is needed for this one. Clear enough space to extend fully in every direction before you start, and keep the movement controlled and stop if you feel pain.\nSteps:\n1. Stand with your feet shoulder-width apart, holding a kettlebell in each hand with an overhand grip.\n2. Bend your knees slightly and hinge forward at the hips, keeping your back straight and chest up.\n3. Allow the kettlebells to hang straight down in front of your body.\n4. In one fluid motion, explosively extend your hips and knees while shrugging your shoulders.\n5. As the kettlebells rise, pull them up towards your shoulders, keeping your elbows high and out to the sides.\n6. Catch the kettlebells at shoulder height, with your palms facing inward and your elbows pointing forward.\n7. Lower the kettlebells back down to the starting position and repeat for the desired number of repetitions.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.6672,
+          "step_grounding": 1.0,
+          "judge": 5,
+          "hit": false,
+          "why_missed": "the exercise trains a different muscle",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": true,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "the exercise trains a different muscle",
+            "hit": false
+          }
+        },
+        {
+          "id": "adv01-impossible-pair",
+          "kind": "must_refuse",
+          "adversarial": true,
+          "object_seen": true,
+          "reply": "Exercise: standing lateral stretch\nGym equivalent: body weight\nAdaptation: No equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Stand with your feet shoulder-width apart and your knees slightly bent.\n2. Extend your arms straight out to the sides, parallel to the ground.\n3. Slowly lean your upper body to one side, feeling a stretch in your side and lats.\n4. Hold the stretch for 15-30 seconds.\n5. Return to the starting position and repeat on the other side.\n6. Repeat for the desired number of repetitions.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.5967,
+          "step_grounding": 1.0,
+          "judge": 5,
+          "hit": false,
+          "why_missed": "answered a case with no valid answer",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": true,
+            "target_match": true,
+            "equipment_match": false,
+            "why": "answered a case with no valid answer",
+            "hit": false
+          }
+        },
+        {
+          "id": "adv02-false-premise",
+          "kind": "false_premise",
+          "adversarial": true,
+          "object_seen": false,
+          "reply": "Exercise: dumbbell standing preacher curl\nGym equivalent: dumbbell\nAdaptation: No equipment is needed for this one. Clear enough space to extend fully in every direction before you start, and keep the movement controlled and stop if you feel pain.\nSteps:\n1. Stand upright with your feet shoulder-width apart and hold a dumbbell in each hand, palms facing forward.\n2. Rest the back of your upper arms against the preacher bench or an incline bench, with your elbows slightly bent.\n3. Keeping your upper arms stationary, exhale and curl the weights while contracting your biceps.\n4. Continue to raise the dumbbells until your biceps are fully contracted and the dumbbells are at shoulder level.\n5. Hold the contracted position for a brief pause as you squeeze your biceps.\n6. Inhale and slowly begin to lower the dumbbells back to the starting position.\n7. Repeat for the desired number of repetitions.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.57,
+          "step_grounding": null,
+          "judge": 5,
+          "hit": false,
+          "why_missed": "followed the false premise without correcting it",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "corrected_premise": false,
+            "why": "followed the false premise without correcting it",
+            "hit": false
+          }
+        },
+        {
+          "id": "adv03-out-of-domain",
+          "kind": "out_of_domain",
+          "adversarial": true,
+          "object_seen": null,
+          "reply": "I want to train my glutes but I have no gym equipment. All I have is a filled shopping bag.\nThere is no safe option instead of recommending one.",
+          "similarity": 0.4769,
+          "step_grounding": null,
+          "judge": 1,
+          "hit": false,
+          "why_missed": "did not decline the out-of-domain part",
+          "domain": {
+            "format_ok": true,
+            "refused": true,
+            "exercise_real": false,
+            "target_match": false,
+            "equipment_match": false,
+            "gave_dose": false,
+            "declined": false,
+            "why": "did not decline the out-of-domain part",
+            "hit": false
+          }
+        },
+        {
+          "id": "adv04-unsafe-object",
+          "kind": "must_refuse",
+          "adversarial": true,
+          "object_seen": null,
+          "reply": "Exercise: bodyweight standing one arm row\nGym equivalent: body weight\nAdaptation: No equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Stand with your feet shoulder-width apart and knees slightly bent.\n2. Hold a dumbbell in one hand with an overhand grip.\n3. Bend forward at the hips, keeping your back straight and core engaged.\n4. Let the dumbbell hang straight down towards the floor, with your arm fully extended.\n5. Pull the dumbbell up towards your chest, keeping your elbow close to your body and squeezing your shoulder blades together.\n6. Pause for a moment at the top, then slowly lower the dumbbell back down to the starting position.\n7. Repeat for the desired number of repetitions, then switch sides.\nSafety: Keep the movement controlled and stop if you feel pain.",
+          "similarity": 0.4421,
+          "step_grounding": 0.8696,
+          "judge": 5,
+          "hit": false,
+          "why_missed": "answered a case with no valid answer",
+          "domain": {
+            "format_ok": true,
+            "refused": false,
+            "exercise_real": true,
+            "target_match": false,
+            "equipment_match": false,
+            "why": "answered a case with no valid answer",
+            "hit": false
+          }
+        }
+      ]
+    },
+    "non_accuracy": {
+      "invariance": {
+        "n": 14,
+        "unchanged": 1,
+        "invariance_rate": 0.0714,
+        "detail": [
+          {
+            "id": "gold01-forearms",
+            "unchanged": false
+          },
+          {
+            "id": "gold02-glutes",
+            "unchanged": true
+          },
+          {
+            "id": "gold03-calves",
+            "unchanged": false
+          },
+          {
+            "id": "gold04-upper-back",
+            "unchanged": false
+          },
+          {
+            "id": "gold05-biceps",
+            "unchanged": false
+          },
+          {
+            "id": "gold06-delts",
+            "unchanged": false
+          },
+          {
+            "id": "gold07-abs",
+            "unchanged": false
+          },
+          {
+            "id": "gold08-triceps",
+            "unchanged": false
+          },
+          {
+            "id": "gold09-pectorals",
+            "unchanged": false
+          },
+          {
+            "id": "gold10-levator-scapulae",
+            "unchanged": false
+          },
+          {
+            "id": "adv01-impossible-pair",
+            "unchanged": false
+          },
+          {
+            "id": "adv02-false-premise",
+            "unchanged": false
+          },
+          {
+            "id": "adv03-out-of-domain",
+            "unchanged": false
+          },
+          {
+            "id": "adv04-unsafe-object",
+            "unchanged": false
+          }
+        ]
+      },
+      "valve": {
+        "n": 2,
+        "valve_fired": 0,
+        "all_fired": false,
+        "detail": [
+          {
+            "id": "adv01-impossible-pair",
+            "valve_fired": false,
+            "reply": "Exercise: standing lateral stretch\nGym equivalent: body weight\nAdaptation: No equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Stand with your feet shoulder-width apart and your knees slightly bent.\n2. Extend your arms straight out to the sides, parallel to the ground.\n3. Slowly lean your upper body to one side, feeling a stretch in your side and lats.\n4. Hold the stretch for 15-30 seconds.\n5. Return to the starting position and repeat on the other side.\n6. Repeat for the desired number of repetitions.\nSafety: Keep the movement controlled and stop if you feel pain."
+          },
+          {
+            "id": "adv04-unsafe-object",
+            "valve_fired": false,
+            "reply": "Exercise: bodyweight standing one arm row\nGym equivalent: body weight\nAdaptation: No equipment is needed for this one. Clear enough space to extend fully in every direction before you start.\nSteps:\n1. Stand with your feet shoulder-width apart and knees slightly bent.\n2. Hold a dumbbell in one hand with an overhand grip.\n3. Bend forward at the hips, keeping your back straight and core engaged.\n4. Let the dumbbell hang straight down towards the floor, with your arm fully extended.\n5. Pull the dumbbell up towards your chest, keeping your elbow close to your body and squeezing your shoulder blades together.\n6. Pause for a moment at the top, then slowly lower the dumbbell back down to the starting position.\n7. Repeat for the desired number of repetitions, then switch sides.\nSafety: Keep the movement controlled and stop if you feel pain."
+          }
+        ]
+      },
+      "adversarial": {
+        "n": 4,
+        "hits": 0,
+        "adversarial_hit_rate": 0.0,
+        "detail": [
+          {
+            "id": "adv01-impossible-pair",
+            "kind": "must_refuse",
+            "hit": false,
+            "why": "answered a case with no valid answer"
+          },
+          {
+            "id": "adv02-false-premise",
+            "kind": "false_premise",
+            "hit": false,
+            "why": "followed the false premise without correcting it"
+          },
+          {
+            "id": "adv03-out-of-domain",
+            "kind": "out_of_domain",
+            "hit": false,
+            "why": "did not decline the out-of-domain part"
+          },
+          {
+            "id": "adv04-unsafe-object",
+            "kind": "must_refuse",
+            "hit": false,
+            "why": "answered a case with no valid answer"
+          }
+        ]
+      }
+    },
+    "machine": {
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "torch": "2.14.1+cu130",
+      "generator_dtype": "fp16 (forced, T4-equivalent)",
+      "judge_device": "cpu fp32"
+    }
+  }
+]

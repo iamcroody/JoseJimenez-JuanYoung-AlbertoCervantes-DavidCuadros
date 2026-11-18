@@ -9,5 +9,6 @@ chromadb==1.5.5
 opentelemetry-api==1.42.1
 opentelemetry-sdk==1.42.1
 rouge_score==0.1.2
-# int4 (nf4) QLoRA-style load. 0.44.1 funciona con la build de torch del T4.
-bitsandbytes==0.44.1
+# int4 (nf4) QLoRA-style load. 0.44.1 no trae binario para CUDA 13, que es lo
+# que usa Colab (torch 2.11.0+cu130 en la corrida de M3); 0.50.2 sí.
+bitsandbytes==0.50.2
