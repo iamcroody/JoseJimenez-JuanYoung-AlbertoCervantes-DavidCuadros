@@ -1,9 +1,19 @@
 .venv/
 __pycache__/
 *.pyc
+.ipynb_checkpoints/
 .DS_Store
 
-# Derived from the pinned submodule by a seeded script — regenerate, don't commit
+# Secrets (W&B and HF keys go in Space secrets or local env files, never in the repo)
+.env
+.env.*
+*.env
+!.env.example
+
+# Local W&B run folders, created when the app or a notebook logs from this machine
+wandb/
+
+# Derived from the pinned submodule by a seeded script: regenerate, don't commit
 data/processed/
 outputs/
 
