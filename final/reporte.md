@@ -437,8 +437,8 @@ De la lectura honesta de M1/M2/M3:
 
 ## 9. Quién hizo qué
 
-<!-- TODO: José, David y Alberto escriben su línea; no se inventan
-     contribuciones individuales. -->
+<!-- Borrador desde el historial de git: José, David y Alberto confirman o
+     reescriben su línea antes de la entrega. -->
 
 - **Juan Andrés Young Hoyos:** monté la base del proyecto: el fork del catálogo
   como submódulo fijo, el entorno con uv y la prueba en un T4 gratuito con la que
@@ -452,9 +452,25 @@ De la lectura honesta de M1/M2/M3:
   ZeroGPU exigía, conecté W&B, rediseñé la pantalla alrededor de la comprobación en
   el catálogo y medí en el despliegue los casos con imagen y cuánto rechaza el
   sistema. Fui el punto de contacto con el profesor.
-- **José Alejandro Jiménez Vásquez:** TODO: confirmar aporte.
-- **David Cuadros Mariño:** TODO: confirmar aporte.
-- **Alberto Daniel Cervantes Forero:** TODO: confirmar aporte.
+- **José Alejandro Jiménez Vásquez:** en M1 entrené el LoRA, lo dejé comiteado
+  con su resumen de entrenamiento y llené los resultados; también hice que el
+  script corriera en local (MPS) y escribí la descripción del dataset. Al final
+  armé la base del Módulo 5: la app de Gradio con health check, log JSON, W&B y el
+  filtro de producción, el código de cuantización a int4 con sus pruebas de
+  válvula e invariancia, la GitHub Action que corre el harness en cada push, el
+  notebook M5, la guía de reproducibilidad, el primer borrador de este reporte y el
+  índice del README.
+- **David Cuadros Mariño:** en M2 construí el harness de evaluación, el eval set
+  del dominio y la rúbrica del juez. En M3 revisé la entrega contra la asignación:
+  las advertencias sobre cómo se ajustaron las decisiones y la sección de uso de
+  IA. En el final medí int4 contra fp16 en la misma GPU, con la tabla antes y
+  después, las pruebas de válvula, invariancia y adversariales y la decisión de
+  dejar el Space en 16 bits.
+- **Alberto Daniel Cervantes Forero:** escribí la definición del proyecto y el
+  reporte de resultados de M1. En M2 corrí el notebook completo y sincronicé las
+  cifras de sesgo con esa corrida. En M3 construí el RAG agéntico: la recuperación
+  híbrida con rerank y HyDE, el agente con su herramienta y la evaluación con el
+  harness y RAGAS.
 
 ## 10. Uso de IA
 
@@ -468,7 +484,8 @@ De la lectura honesta de M1/M2/M3:
 - **Revisión del integrador M5:** Claude Code se usó para comparar la rama con la
   asignación, recomputar las cifras del README desde `reports/` y redactar este
   reporte y las ediciones de portada, manteniendo cada cifra trazable a una corrida
-  ejecutada o marcada como placeholder de la corrida T4.
+  ejecutada. La tabla de eficiencia sale de nuestra propia corrida en una RTX 4060
+  (`final/efficiency/run_local.py`).
 - **Diapositivas:** la estructura y el contenido de la sustentación los planeamos
   nosotros. Con open-slide, y Claude Code escribiendo las páginas, pudimos
   organizarlo mejor en una presentación: cada idea en su página, el aspecto de
