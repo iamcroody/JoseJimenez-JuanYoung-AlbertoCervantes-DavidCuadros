@@ -10,7 +10,7 @@ not improvise something that does not train the muscle or could hurt them.
 | **Live demo** | <https://huggingface.co/spaces/jayoungh/macgyver-gym-rat> (Hugging Face ZeroGPU Space). Pick a muscle and an object from the lists. Signing in to Hugging Face gives a larger daily GPU quota (5 min a day, 2 without signing in; one request uses about 10 s). |
 | **W&B project** | <https://wandb.ai/jayoungh-me/macgyver-gym-rat-m5>: latency per request, recommendations against refusals, filter blocks and which components ran. One run per start of the Space. Without `WANDB_API_KEY`, W&B is a silent no-op and the app still runs. |
 | **Final report** | [`final/reporte.md`](final/reporte.md): problem and user, system diagram, decisions, evolutionary table, ablation, error analysis, limitations, ethics, who did what, AI use. |
-| **Slides** | [`final/slides`](final/slides/slides/sustentacion-final/index.tsx), built with open-slide (`cd final/slides && npm install && npm run dev`). |
+| **Slides** | [PDF](final/slides/sustentacion-final.pdf) of the defence deck. Source in [`final/slides`](final/slides/slides/sustentacion-final/index.tsx), built with open-slide (`cd final/slides && npm install && npm run dev`). |
 
 ## How it works
 
